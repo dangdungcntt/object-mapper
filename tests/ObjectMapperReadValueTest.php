@@ -3,11 +3,18 @@
 namespace Nddcoder\ObjectMapper\Tests;
 
 use Nddcoder\ObjectMapper\Exceptions\AttributeMustNotBeNullException;
+use Nddcoder\ObjectMapper\Exceptions\CannotConstructUnionTypeException;
 use Nddcoder\ObjectMapper\Exceptions\ClassNotFoundException;
 use Nddcoder\ObjectMapper\ObjectMapperFacade;
+use Nddcoder\ObjectMapper\Tests\Model\DeviceInfo;
+use Nddcoder\ObjectMapper\Tests\Model\Keys;
+use Nddcoder\ObjectMapper\Tests\Model\ModelWithCustomSetter;
+use Nddcoder\ObjectMapper\Tests\Model\ModelWithNullableString;
+use Nddcoder\ObjectMapper\Tests\Model\ModelWithNullUnionType;
+use Nddcoder\ObjectMapper\Tests\Model\ModelWithStdClass;
+use Nddcoder\ObjectMapper\Tests\Model\ModelWithUnionType;
 use Nddcoder\ObjectMapper\Tests\Model\User;
-use Nddcoder\ObjectMapper\Tests\Model\UserWithCustomSetter;
-use Nddcoder\ObjectMapper\Tests\Model\UserWithNullableString;
+use stdClass;
 
 class ObjectMapperReadValueTest extends TestCase
 {
@@ -64,8 +71,8 @@ class ObjectMapperReadValueTest extends TestCase
             'request_num' => '1234'
         ];
 
-        /** @var UserWithCustomSetter $user */
-        $user = ObjectMapperFacade::readValue(json_encode($data), UserWithCustomSetter::class);
+        /** @var ModelWithCustomSetter $user */
+        $user = ObjectMapperFacade::readValue(json_encode($data), ModelWithCustomSetter::class);
 
         $this->assertEquals(1234, $user->requestNumber);
         $this->assertEquals('authKey', $user->keys->auth);
@@ -80,8 +87,8 @@ class ObjectMapperReadValueTest extends TestCase
             'request_num' => '1234'
         ];
 
-        /** @var UserWithCustomSetter $user */
-        $user = ObjectMapperFacade::readValue(json_encode($data), UserWithCustomSetter::class);
+        /** @var ModelWithCustomSetter $user */
+        $user = ObjectMapperFacade::readValue(json_encode($data), ModelWithCustomSetter::class);
 
         $this->assertEquals('nddcoder', $user->company);
         $this->assertIsInt($user->requestNumber);
@@ -99,9 +106,79 @@ class ObjectMapperReadValueTest extends TestCase
             ],
         ];
 
-        /** @var UserWithNullableString $user */
-        $user = ObjectMapperFacade::readValue(json_encode($data), UserWithNullableString::class);
+        /** @var ModelWithNullableString $user */
+        $user = ObjectMapperFacade::readValue(json_encode($data), ModelWithNullableString::class);
 
         $this->assertNull($user->company);
+    }
+
+    /** @test */
+    public function it_can_set_std_class_value()
+    {
+        $user = ObjectMapperFacade::readValue(json_encode([
+            'tags' => [
+                'type' => 'user'
+            ]
+        ]), ModelWithStdClass::class);
+
+        $this->assertInstanceOf(ModelWithStdClass::class, $user);
+        $this->assertInstanceOf(stdClass::class, $user->tags);
+
+        $this->assertEquals('user', $user->tags->type);
+    }
+
+    /** @test */
+    public function it_can_set_union_type_value()
+    {
+        $modelWithDeviceInfo = ObjectMapperFacade::readValue(json_encode([
+            'magic_field' => [
+                'device_type'     => 'smartphone',
+                'device_brand'    => 'Samsung',
+                'device_model'    => 'GALAXY A3 (2017)',
+                'browser_name'    => 'Chrome Mobile',
+                'browser_version' => '86.0.4240.99',
+                'os_name'         => 'Android',
+                'os_version'      => '8.0.0'
+            ]
+        ]), ModelWithUnionType::class);
+
+        $this->assertInstanceOf(ModelWithUnionType::class, $modelWithDeviceInfo);
+        $this->assertInstanceOf(DeviceInfo::class, $modelWithDeviceInfo->magicField);
+        $this->assertEquals('smartphone', $modelWithDeviceInfo->magicField->deviceType);
+
+        $modelWithKeys = ObjectMapperFacade::readValue(json_encode([
+            'magic_field' => [
+                'p256dh' => 'BL2lxnUZkj3eKw4Wac',
+                'auth'   => 't_xHCouA1lw'
+            ]
+        ]), ModelWithUnionType::class);
+
+        $this->assertInstanceOf(ModelWithUnionType::class, $modelWithKeys);
+        $this->assertInstanceOf(Keys::class, $modelWithKeys->magicField);
+        $this->assertEquals('t_xHCouA1lw', $modelWithKeys->magicField->auth);
+    }
+
+    /** @test */
+    public function it_should_throw_exception_when_cannot_set_union_type_value()
+    {
+        $this->expectException(CannotConstructUnionTypeException::class);
+        ObjectMapperFacade::readValue(json_encode([
+            'magic_field' => [
+                'not_valid_field'     => 'smartphone',
+            ]
+        ]), ModelWithUnionType::class);
+    }
+
+    /** @test */
+    public function it_should_not_throw_exception_when_union_has_type_null()
+    {
+        $model = ObjectMapperFacade::readValue(json_encode([
+            'magic_field' => [
+                'not_valid_field'     => 'smartphone',
+            ]
+        ]), ModelWithNullUnionType::class);
+
+        $this->assertInstanceOf(ModelWithNullUnionType::class, $model);
+        $this->assertNull($model->magicField);
     }
 }

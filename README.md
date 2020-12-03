@@ -63,6 +63,46 @@ $postJsonString = ObjectMapperFacade::writeValueAsString($post);
 echo $postJsonString; //{"title":"New Blog Post","body":"Blog body here"}
 ```
 
+#### Custom behavior via getter/setter
+
+You can define getter/setter to custom behavior when get/set a property
+``` php
+
+use Nddcoder\ObjectMapper\ObjectMapperFacade;
+use Nddcoder\ObjectMapper\Attributes\JsonProperty;
+
+class User {
+    public ObjectId
+    public string $username;
+    protected string $password;
+    
+    public function setUsername(string $username): void
+    {
+        $this->username = strtolower($username);
+    }
+    
+    public function getPassword(): ?string
+    {
+        return null;
+    }
+    
+    public function setPassword(string $password): void
+    {
+        $this->password = md5($password);
+    }
+}
+
+//Make object from json string
+$jsonString = '{"username":"nddcoder","password":"Blog body here"}';
+$post = ObjectMapperFacade::readValue($jsonString, Post::class);
+echo $post->title; //New Blog Post
+echo $post->content; //5f4dcc3b5aa765d61d8327deb882cf99
+
+//Convert object to json string
+$postJsonString = ObjectMapperFacade::writeValueAsString($post);
+echo $postJsonString; //{"title":"New Blog Post","body":"Blog body here"}
+```
+
 ## Testing
 
 ``` bash

@@ -4,7 +4,7 @@
 namespace Nddcoder\ObjectMapper\Tests\Model;
 
 
-class UserWithCustomSetter
+class ModelWithCustomSetter
 {
     public ?Keys $keys;
     public int $requestNumber;

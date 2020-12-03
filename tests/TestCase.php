@@ -29,10 +29,10 @@ class TestCase extends Orchestra
         return [
             'id'               => '5fc6dd841c82e300486c028d',
             'subscription'     => [
-                'endpoint' => 'https://fcm.googleapis.com/fcm/send/cJqlz2VQ_jg:APA91bF23j5czbhbJ9SyV1J4w1R-s6xk0GBOC4JyepZ-WG26cTg2AGvWwodNuuODjywZqH-9VuS26SVpQHSx5WD1M2qe1nZlBp2o7ZA6ZCuNGO4qfapDo0A37MEqJzkPFPtRD5Vl7Zpo',
+                'endpoint' => 'https://fcm.googleapis.com/fcm/send/cJqH-5Vl7Zpo',
                 'keys'     => [
-                    'p256dh' => 'BL2lxnUymlxmEw0RZZaRKxocUaYFjyHN6lsWROI7Vp2YWwukErELQJXkDRvqV5vEb4Ln5tnRthpyZkj3eKw4Wac',
-                    'auth'   => 't_xHCoTm1nK1aop36uA1lw'
+                    'p256dh' => 'BL2lxnUymlxmpyZkj3eKw4Wac',
+                    'auth'   => 't_xHC1lw'
                 ]
             ],
             'subscribed_times' => 1,
@@ -48,8 +48,8 @@ class TestCase extends Orchestra
                 'os_name'         => 'Android',
                 'os_version'      => '8.0.0'
             ],
-            'created_at'       => '2020-12-02T07:19:16+07:00',
-            'updated_at'       => '2020-12-02T07:19:16+07:00',
+            'created_at'       => '2020-12-02T07:19:16.123+07:00',
+            'updated_at'       => '2020-12-02T07:19:16.123+07:00',
             'body'             => 'json property description',
             'title'            => null,
             'not_exists_field' => 123

@@ -4,7 +4,7 @@
 namespace Nddcoder\ObjectMapper\Tests\Model;
 
 
-class UserWithProtectedProperty
+class ModelWithProtectedProperty
 {
     protected string $password;
     public string $company;

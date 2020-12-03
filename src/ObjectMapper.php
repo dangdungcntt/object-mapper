@@ -2,27 +2,29 @@
 
 namespace Nddcoder\ObjectMapper;
 
-use DateTimeInterface;
 use Nddcoder\ObjectMapper\Attributes\JsonProperty;
+use Nddcoder\ObjectMapper\Contracts\ObjectMapperEncoder;
 use Nddcoder\ObjectMapper\Exceptions\AttributeMustNotBeNullException;
+use Nddcoder\ObjectMapper\Exceptions\CannotConstructUnionTypeException;
 use Nddcoder\ObjectMapper\Exceptions\ClassNotFoundException;
 use ReflectionAttribute;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionProperty;
 use ReflectionType;
+use ReflectionUnionType;
+use Throwable;
 
 class ObjectMapper
 {
     protected static array $cachedClassInfo = [];
-    protected static array $cachedResolverForClass = [];
-    protected static array $cachedConverterForClass = [];
+    protected static array $encoderCache = [];
 
     protected const CLASS_PUBLIC_PROPERTIES = 'public_properties';
     protected const CLASS_PRIVATE_AND_PROTECTED_PROPERTIES = 'private_and_protected_properties';
     protected const CLASS_GETTER_AND_SETTER = 'getter_and_setter';
-    protected const CLASS_IS_INTERNAL = 'is_internal';
 
     /**
      * @param  string|array  $json
@@ -114,6 +116,13 @@ class ObjectMapper
 
         $className = $value::class;
 
+        /** @var ?ObjectMapperEncoder $encoder */
+        $encoder = $this->findEncoder($className);
+
+        if (!is_null($encoder)) {
+            return $encoder->encode($value, $className);
+        }
+
         $getterAndSetter = $this->getClassInfo($className, self::CLASS_GETTER_AND_SETTER);
 
         $publicProperties = $this->getClassInfo($className, self::CLASS_PUBLIC_PROPERTIES);
@@ -140,9 +149,7 @@ class ObjectMapper
                 continue;
             }
 
-            $outputValue = $value->{$camelCaseMethod}();
-
-            $jsonObject[$outputField] = $this->convertOutputValue($outputValue);
+            $jsonObject[$outputField] = $this->convertOutputValue($value->{$camelCaseMethod}());
         }
 
         return json_encode((object) $jsonObject);
@@ -152,7 +159,7 @@ class ObjectMapper
      * @param  string  $className
      * @param  string  $field
      * @return mixed
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function getClassInfo(string $className, string $field): mixed
     {
@@ -172,7 +179,6 @@ class ObjectMapper
                 ReflectionProperty::IS_PRIVATE | ReflectionProperty::IS_PROTECTED
             ),
             static::CLASS_GETTER_AND_SETTER                => $this->getGetterAndSetterMethods($reflectionClass),
-            static::CLASS_IS_INTERNAL                      => $reflectionClass->isInternal()
         ];
 
         static::$cachedClassInfo[$className] = $classInfo;
@@ -218,66 +224,6 @@ class ObjectMapper
         return $getterAndSetters;
     }
 
-    protected function convertOutputValue(mixed $outputValue): mixed
-    {
-        if (!is_object($outputValue)) {
-            return $outputValue;
-        }
-
-        if (method_exists($outputValue, '__toString')) {
-            return $outputValue->__toString();
-        }
-
-        $outputClass = $outputValue::class;
-
-        if ($this->getClassInfo($outputClass, self::CLASS_IS_INTERNAL)) {
-            return $this->convertInternalClassInstance($outputClass, $outputValue);
-        }
-
-        $stringOutput = $this->writeValueAsString($outputValue);
-
-        return json_decode($stringOutput, true) ?? $stringOutput;
-    }
-
-    protected function constructInternalClassInstance(string $className, mixed $value): mixed
-    {
-        if (isset(static::$cachedResolverForClass[$className])) {
-            return (static::$cachedResolverForClass[$className])($value);
-        }
-
-        $resolver = fn(): mixed => null;
-
-        $classImplements = class_implements($className) ?: [];
-
-        if (in_array(DateTimeInterface::class, $classImplements)) {
-            $resolver = fn($value) => new $className($value);
-        }
-
-        static::$cachedResolverForClass[$className] = $resolver;
-
-        return $resolver($value);
-
-    }
-
-    protected function convertInternalClassInstance(string $className, mixed $value): mixed
-    {
-        if (isset(static::$cachedConverterForClass[$className])) {
-            return (static::$cachedConverterForClass[$className])($value);
-        }
-
-        $converter = fn($value): mixed => $value;
-
-        $classImplements = class_implements($className) ?: [];
-
-        if (in_array(DateTimeInterface::class, $classImplements)) {
-            $converter = fn(DateTimeInterface $value) => $value->format('c');
-        }
-
-        static::$cachedConverterForClass[$className] = $converter;
-
-        return $converter($value);
-    }
-
     protected function resolveValue(mixed $value, ?ReflectionType $propertyType): mixed
     {
         if (is_null($value)) {
@@ -293,22 +239,82 @@ class ObjectMapper
                 try {
                     settype($value, $propertyType->getName());
                     return $value;
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     return null;
                 }
             }
 
-            if ($this->getClassInfo($propertyType->getName(), self::CLASS_IS_INTERNAL)) {
-                return $this->constructInternalClassInstance($propertyType->getName(), $value);
+            $propertyClassName = $propertyType->getName();
+
+            /** @var ObjectMapperEncoder $encoder */
+            $encoder = $this->findEncoder($propertyClassName);
+
+            $resolvedValue = null;
+            if (!is_null($encoder)) {
+                $resolvedValue = $encoder->decode($value, $propertyClassName);
+            } elseif (is_array($value)) {
+                $resolvedValue = $this->readValue($value, $propertyClassName);
             }
 
-            if (is_array($value)) {
-                return $this->readValue($value, $propertyType->getName());
+            return $resolvedValue instanceof $propertyClassName ? $resolvedValue : null;
+        }
+
+        if ($propertyType instanceof ReflectionUnionType) {
+            $exceptions = [];
+            $typeNames  = [];
+
+            foreach ($propertyType->getTypes() as $type) {
+                try {
+                    $typeNames[] = $type->getName();
+                    if ($v = $this->resolveValue($value, $type)) {
+                        return $v;
+                    }
+
+                    if ($type->getName() === 'null') {
+                        return null;
+                    }
+                } catch (Throwable $exception) {
+                    $exceptions[] = $exception;
+                }
+            }
+
+            if (!empty($exceptions)) {
+                throw CannotConstructUnionTypeException::make(join('|', $typeNames), $exceptions[0]);
+            }
+        }
+        // @codeCoverageIgnoreStart
+        // Never reached here because ReflectionType has only 2 implementations: ReflectionUnionType, ReflectionNamedType
+        return null;
+        // @codeCoverageIgnoreEnd
+    }
+
+    protected function findEncoder(string $className): ?ObjectMapperEncoder
+    {
+        if (isset(static::$encoderCache[$className])) {
+            return static::$encoderCache[$className];
+        }
+
+        $classImplements = class_implements($className) ?: [];
+
+        $encoders = config('laravel-object-mapper.encoders') ?? [];
+
+        foreach ($encoders as $targetClass => $encoderClass) {
+            if ($targetClass == $className || in_array($targetClass, $classImplements)) {
+                return static::$encoderCache[$className] = new $encoderClass();
             }
         }
 
-        $propertyClassName = $propertyType->getName();
+        return static::$encoderCache[$className] = null;
+    }
 
-        return $value instanceof $propertyClassName ? $value : null;
+    protected function convertOutputValue(mixed $outputValue): mixed
+    {
+        if (!is_object($outputValue)) {
+            return $outputValue;
+        }
+
+        $stringOutput = $this->writeValueAsString($outputValue);
+
+        return json_decode($stringOutput, true) ?? $stringOutput;
     }
 }

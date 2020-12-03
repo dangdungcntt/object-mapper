@@ -3,12 +3,12 @@
 namespace Nddcoder\ObjectMapper\Tests;
 
 use Nddcoder\ObjectMapper\ObjectMapperFacade;
-use Nddcoder\ObjectMapper\Tests\Model\KeysWithToStringMethod;
+use Nddcoder\ObjectMapper\Tests\Model\ModelWithCustomGetter;
+use Nddcoder\ObjectMapper\Tests\Model\ModelWithKeysWithToString;
+use Nddcoder\ObjectMapper\Tests\Model\ModelWithProtectedProperty;
+use Nddcoder\ObjectMapper\Tests\Model\ModelWithStdClass;
+use Nddcoder\ObjectMapper\Tests\Model\ModelWithToStringMethod;
 use Nddcoder\ObjectMapper\Tests\Model\User;
-use Nddcoder\ObjectMapper\Tests\Model\UserWithCustomGetter;
-use Nddcoder\ObjectMapper\Tests\Model\UserWithKeysWithToString;
-use Nddcoder\ObjectMapper\Tests\Model\UserWithProtectedProperty;
-use Nddcoder\ObjectMapper\Tests\Model\UserWithStdClass;
 
 class ObjectMapperWriteValueTest extends TestCase
 {
@@ -32,7 +32,7 @@ class ObjectMapperWriteValueTest extends TestCase
     /** @test */
     public function it_can_override_output_value_via_getter()
     {
-        $user          = new UserWithCustomGetter();
+        $user          = new ModelWithCustomGetter();
         $user->company = 'nddcoder';
 
         $json = ObjectMapperFacade::writeValueAsString($user);
@@ -43,7 +43,7 @@ class ObjectMapperWriteValueTest extends TestCase
     /** @test */
     public function it_ignore_non_public_property_if_no_getter_exists()
     {
-        $user          = new UserWithProtectedProperty();
+        $user          = new ModelWithProtectedProperty();
         $user->company = 'nddcoder';
         $user->setPassword('123abc');
 
@@ -132,8 +132,8 @@ class ObjectMapperWriteValueTest extends TestCase
     /** @test */
     public function it_use_to_string_method_of_class_property()
     {
-        $user       = new UserWithKeysWithToString();
-        $user->keys = new KeysWithToStringMethod();
+        $user       = new ModelWithKeysWithToString();
+        $user->keys = new ModelWithToStringMethod();
 
         $this->assertEquals(json_encode([
             'keys' => 'masked data'
@@ -147,11 +147,11 @@ class ObjectMapperWriteValueTest extends TestCase
     }
 
     /** @test */
-    public function it_cast_std_class_to_string()
+    public function it_can_cast_std_class_to_string()
     {
         $stdClass       = new \stdClass();
         $stdClass->type = 'user';
-        $user           = new UserWithStdClass();
+        $user           = new ModelWithStdClass();
         $user->tags     = $stdClass;
 
         $this->assertEquals(json_encode([

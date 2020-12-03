@@ -4,7 +4,7 @@
 namespace Nddcoder\ObjectMapper\Tests\Model;
 
 
-class UserWithNullableString
+class ModelWithStdClass
 {
-    public ?string $company;
+    public \stdClass $tags;
 }

@@ -4,7 +4,7 @@
 namespace Nddcoder\ObjectMapper\Tests\Model;
 
 
-class KeysWithToStringMethod
+class ModelWithToStringMethod
 {
     public string $p256dh;
     public string $auth;
