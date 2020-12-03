@@ -1,38 +1,38 @@
 {
-    "name": ":vendor_name/:package_name",
-    "description": ":package_description",
+    "name": "nddcoder/laravel-object-mapper",
+    "description": "Object mapper for laravel",
     "keywords": [
-        ":vendor_name",
-        ":package_name"
+        "nddcoder",
+        "laravel-object-mapper"
     ],
-    "homepage": "https://github.com/:vendor_name/:package_name",
+    "homepage": "https://github.com/dangdungcntt/laravel-object-mapper",
     "license": "MIT",
     "authors": [
         {
-            "name": ":author_name",
-            "email": ":author_email",
-            "homepage": "https://spatie.be",
+            "name": "Dung Nguyen Dang",
+            "email": "dangdungcntt@gmail.com",
+            "homepage": "https://nddcoder.com",
             "role": "Developer"
         }
     ],
     "require": {
-        "php": "^7.4|^8.0",
-        "illuminate/contracts": "^8.0"
+        "php": "^8.0",
+        "illuminate/contracts": "^8.0",
+        "ext-json": "*"
     },
     "require-dev": {
         "orchestra/testbench": "^6.0",
         "phpunit/phpunit": "^9.3",
-        "vimeo/psalm": "^3.11"
+        "vimeo/psalm": "^4.3"
     },
     "autoload": {
         "psr-4": {
-            "Spatie\\Skeleton\\": "src",
-            "Spatie\\Skeleton\\Database\\Factories\\": "database/factories"
+            "Nddcoder\\ObjectMapper\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Spatie\\Skeleton\\Tests\\": "tests"
+            "Nddcoder\\ObjectMapper\\Tests\\": "tests"
         }
     },
     "scripts": {
@@ -46,23 +46,13 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Spatie\\Skeleton\\SkeletonServiceProvider"
+                "Nddcoder\\ObjectMapper\\ObjectMapperServiceProvider"
             ],
             "aliases": {
-                "Skeleton": "Spatie\\Skeleton\\SkeletonFacade"
+                "ObjectMapper": "Nddcoder\\ObjectMapper\\ObjectMapperFacade"
             }
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true,
-    "funding": [
-        {
-            "type": "github",
-            "url": "https://github.com/sponsors/spatie"
-        },
-        {
-            "type": "other",
-            "url": "https://spatie.be/open-source/support-us"
-        }
-    ]
+    "prefer-stable": true
 }
