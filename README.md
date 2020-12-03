@@ -15,23 +15,52 @@ You can install the package via composer:
 composer require nddcoder/laravel-object-mapper
 ```
 
-You can publish the config file with:
-```bash
-php artisan vendor:publish --provider="Nddcoder\ObjectMapper\ObjectMapperServiceProvider" --tag="config"
-```
-
-This is the contents of the published config file:
-
-```php
-return [
-];
-```
-
 ## Usage
 
 ``` php
-$laravel-object-mapper = new Nddcoder\ObjectMapper();
-echo $laravel-object-mapper->echoPhrase('Hello, Nddcoder!');
+
+use Nddcoder\ObjectMapper\ObjectMapperFacade;
+
+class User {
+    public string $name;
+    public string $email;
+}
+
+//Make object from json string
+$jsonString = '{"name":"Dung Nguyen Dang","email":"dangdungcntt@gmail.com"}';
+$user = ObjectMapperFacade::readValue($jsonString, User::class);
+echo $user->name; //Dung Nguyen Dang
+echo $user->email; //dangdungcntt@gmail.com
+
+//Convert object to json string
+$userJsonString = ObjectMapperFacade::writeValueAsString($user);
+echo $userJsonString; //{"name":"Dung Nguyen Dang","email":"dangdungcntt@gmail.com"}
+```
+
+#### Custom JSON property
+
+You can use `JsonProperty('<propertyName>')` to custom name for a property
+``` php
+
+use Nddcoder\ObjectMapper\ObjectMapperFacade;
+use Nddcoder\ObjectMapper\Attributes\JsonProperty;
+
+class Post {
+    public string $title;
+    
+    #[JsonProperty('body')]
+    public string $content;
+}
+
+//Make object from json string
+$jsonString = '{"title":"New Blog Post","body":"Blog body here"}';
+$post = ObjectMapperFacade::readValue($jsonString, Post::class);
+echo $post->title; //New Blog Post
+echo $post->content; //Blog body here
+
+//Convert object to json string
+$postJsonString = ObjectMapperFacade::writeValueAsString($post);
+echo $postJsonString; //{"title":"New Blog Post","body":"Blog body here"}
 ```
 
 ## Testing
