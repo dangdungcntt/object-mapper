@@ -3,7 +3,6 @@
 
 namespace Nddcoder\ObjectMapper;
 
-
 class StrHelpers
 {
     protected static array $snakeCache = [];
@@ -30,7 +29,7 @@ class StrHelpers
             return static::$snakeCache[$key][$delimiter];
         }
 
-        if (!ctype_lower($value)) {
+        if (! ctype_lower($value)) {
             $value = preg_replace('/\s+/u', '', ucwords($value));
 
             $value = mb_strtolower(preg_replace('/(.)(?=[A-Z])/u', '$1'.$delimiter, $value), 'UTF-8');

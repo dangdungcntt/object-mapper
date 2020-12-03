@@ -66,9 +66,9 @@ class ObjectMapperReadValueTest extends TestCase
             'company' => 'nddcoder',
             'auth_key' => [
                 'p256dh' => '123',
-                'auth' => 'authKey'
+                'auth' => 'authKey',
             ],
-            'request_num' => '1234'
+            'request_num' => '1234',
         ];
 
         /** @var ModelWithCustomSetter $user */
@@ -84,7 +84,7 @@ class ObjectMapperReadValueTest extends TestCase
         $data = [
             'company' => 'nddcoder',
             'auth_key' => 'invalid_type_of_Keys',
-            'request_num' => '1234'
+            'request_num' => '1234',
         ];
 
         /** @var ModelWithCustomSetter $user */
@@ -102,7 +102,7 @@ class ObjectMapperReadValueTest extends TestCase
     {
         $data = [
             'company' => [
-                'abc' => 1
+                'abc' => 1,
             ],
         ];
 
@@ -117,8 +117,8 @@ class ObjectMapperReadValueTest extends TestCase
     {
         $user = ObjectMapperFacade::readValue(json_encode([
             'tags' => [
-                'type' => 'user'
-            ]
+                'type' => 'user',
+            ],
         ]), ModelWithStdClass::class);
 
         $this->assertInstanceOf(ModelWithStdClass::class, $user);
@@ -132,14 +132,14 @@ class ObjectMapperReadValueTest extends TestCase
     {
         $modelWithDeviceInfo = ObjectMapperFacade::readValue(json_encode([
             'magic_field' => [
-                'device_type'     => 'smartphone',
-                'device_brand'    => 'Samsung',
-                'device_model'    => 'GALAXY A3 (2017)',
-                'browser_name'    => 'Chrome Mobile',
+                'device_type' => 'smartphone',
+                'device_brand' => 'Samsung',
+                'device_model' => 'GALAXY A3 (2017)',
+                'browser_name' => 'Chrome Mobile',
                 'browser_version' => '86.0.4240.99',
-                'os_name'         => 'Android',
-                'os_version'      => '8.0.0'
-            ]
+                'os_name' => 'Android',
+                'os_version' => '8.0.0',
+            ],
         ]), ModelWithUnionType::class);
 
         $this->assertInstanceOf(ModelWithUnionType::class, $modelWithDeviceInfo);
@@ -149,8 +149,8 @@ class ObjectMapperReadValueTest extends TestCase
         $modelWithKeys = ObjectMapperFacade::readValue(json_encode([
             'magic_field' => [
                 'p256dh' => 'BL2lxnUZkj3eKw4Wac',
-                'auth'   => 't_xHCouA1lw'
-            ]
+                'auth' => 't_xHCouA1lw',
+            ],
         ]), ModelWithUnionType::class);
 
         $this->assertInstanceOf(ModelWithUnionType::class, $modelWithKeys);
@@ -164,8 +164,8 @@ class ObjectMapperReadValueTest extends TestCase
         $this->expectException(CannotConstructUnionTypeException::class);
         ObjectMapperFacade::readValue(json_encode([
             'magic_field' => [
-                'not_valid_field'     => 'smartphone',
-            ]
+                'not_valid_field' => 'smartphone',
+            ],
         ]), ModelWithUnionType::class);
     }
 
@@ -174,8 +174,8 @@ class ObjectMapperReadValueTest extends TestCase
     {
         $model = ObjectMapperFacade::readValue(json_encode([
             'magic_field' => [
-                'not_valid_field'     => 'smartphone',
-            ]
+                'not_valid_field' => 'smartphone',
+            ],
         ]), ModelWithNullUnionType::class);
 
         $this->assertInstanceOf(ModelWithNullUnionType::class, $model);
