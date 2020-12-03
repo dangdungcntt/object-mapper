@@ -6,8 +6,8 @@ namespace Nddcoder\ObjectMapper\Exceptions;
 
 class ClassNotFoundException extends \Exception
 {
-    public static function make(string $message): self
+    public static function make(string $className): self
     {
-        return new static($message);
+        return new self(sprintf("Class %s not found", $className));
     }
 }

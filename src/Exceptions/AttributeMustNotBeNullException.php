@@ -6,8 +6,8 @@ namespace Nddcoder\ObjectMapper\Exceptions;
 
 class AttributeMustNotBeNullException extends \Exception
 {
-    public static function make(string $message): self
+    public static function make(string $className, string $propertyName): self
     {
-        return new static($message);
+        return new self(sprintf("%s::\$%s must not be null", $className, $propertyName));
     }
 }

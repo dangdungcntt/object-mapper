@@ -3,16 +3,15 @@
 namespace Nddcoder\ObjectMapper;
 
 use Illuminate\Support\ServiceProvider;
-use Nddcoder\ObjectMapper\Commands\ObjectMapperCommand;
 
 class ObjectMapperServiceProvider extends ServiceProvider
 {
-    public function boot()
+    public function boot(): void
     {
         //
     }
 
-    public function register()
+    public function register(): void
     {
         $this->app->bind('laravel-object-mapper', ObjectMapper::class);
     }

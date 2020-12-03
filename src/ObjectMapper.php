@@ -2,7 +2,7 @@
 
 namespace Nddcoder\ObjectMapper;
 
-use Illuminate\Support\Str;
+use DateTimeInterface;
 use Nddcoder\ObjectMapper\Attributes\JsonProperty;
 use Nddcoder\ObjectMapper\Exceptions\AttributeMustNotBeNullException;
 use Nddcoder\ObjectMapper\Exceptions\ClassNotFoundException;
@@ -34,7 +34,7 @@ class ObjectMapper
     public function readValue(string|array $json, string $className): mixed
     {
         if (!class_exists($className)) {
-            throw ClassNotFoundException::make(sprintf("Class %s not found", $className));
+            throw ClassNotFoundException::make($className);
         }
 
         $data = is_string($json) ? json_decode($json, true) : $json;
@@ -47,7 +47,7 @@ class ObjectMapper
         $nulledProperties = [];
 
         foreach ($publicProperties as [$propertyName, $propertyType, $jsonPropertyName]) {
-            $value = $data[$jsonPropertyName ?? Str::snake($propertyName)] ?? null;
+            $value = $data[$jsonPropertyName ?? StrHelpers::snake($propertyName)] ?? null;
 
             $resolvedValue = $this->resolveValue($value, $propertyType);
 
@@ -60,7 +60,7 @@ class ObjectMapper
         }
 
         foreach ($data as $snakeCaseProperty => $value) {
-            if (array_key_exists($camelCaseMethod = 'set'.Str::studly($snakeCaseProperty), $getterAndSetter)) {
+            if (array_key_exists($camelCaseMethod = 'set'.StrHelpers::studly($snakeCaseProperty), $getterAndSetter)) {
                 $paramType = $getterAndSetter[$camelCaseMethod][0]?->getType();
                 $instance->{$camelCaseMethod}($this->resolveValue($value, $paramType));
                 continue;
@@ -75,8 +75,7 @@ class ObjectMapper
 
         foreach ($nulledProperties as $propertyName) {
             if (!isset($instance->{$propertyName})) {
-                throw AttributeMustNotBeNullException::make(sprintf("%s::\$%s must not be null", $className,
-                    $propertyName));
+                throw AttributeMustNotBeNullException::make($className, $propertyName);
             }
         }
 
@@ -122,7 +121,7 @@ class ObjectMapper
         $jsonObject = [];
 
         foreach ($publicProperties as [$propertyName, $_, $jsonPropertyName]) {
-            $outputField     = $jsonPropertyName ?? Str::snake($propertyName);
+            $outputField     = $jsonPropertyName ?? StrHelpers::snake($propertyName);
             $camelCaseMethod = 'get'.ucfirst($propertyName);
             $outputValue     = array_key_exists($camelCaseMethod, $getterAndSetter)
                 ? $value->{$camelCaseMethod}()
@@ -134,7 +133,7 @@ class ObjectMapper
         $privateAndProtectedProperties = $this->getClassInfo($className, self::CLASS_PRIVATE_AND_PROTECTED_PROPERTIES);
 
         foreach ($privateAndProtectedProperties as [$propertyName, $_, $jsonPropertyName]) {
-            $outputField     = $jsonPropertyName ?? Str::snake($propertyName);
+            $outputField     = $jsonPropertyName ?? StrHelpers::snake($propertyName);
             $camelCaseMethod = 'get'.ucfirst($propertyName);
 
             if (!array_key_exists($camelCaseMethod, $getterAndSetter)) {
@@ -163,7 +162,7 @@ class ObjectMapper
 
         $reflectionClass = new ReflectionClass($className);
 
-        static::$cachedClassInfo[$className] = [
+        $classInfo = [
             static::CLASS_PUBLIC_PROPERTIES                => $this->getClassProperties(
                 $reflectionClass,
                 ReflectionProperty::IS_PUBLIC
@@ -176,7 +175,9 @@ class ObjectMapper
             static::CLASS_IS_INTERNAL                      => $reflectionClass->isInternal()
         ];
 
-        return static::$cachedClassInfo[$className][$field] ?? null;
+        static::$cachedClassInfo[$className] = $classInfo;
+
+        return $classInfo[$field] ?? null;
     }
 
     protected function getClassProperties(ReflectionClass $reflectionClass, ?int $filter = null): array
@@ -238,21 +239,24 @@ class ObjectMapper
         return json_decode($stringOutput, true) ?? $stringOutput;
     }
 
-    protected function constructInternalClassInstance(string $className, mixed $value)
+    protected function constructInternalClassInstance(string $className, mixed $value): mixed
     {
         if (isset(static::$cachedResolverForClass[$className])) {
             return (static::$cachedResolverForClass[$className])($value);
         }
 
+        $resolver = fn(): mixed => null;
+
         $classImplements = class_implements($className) ?: [];
 
-        if (in_array(\DateTimeInterface::class, $classImplements)) {
-            $resolver                                   = fn($value) => new $className($value);
-            static::$cachedResolverForClass[$className] = $resolver;
-            return $resolver($value);
+        if (in_array(DateTimeInterface::class, $classImplements)) {
+            $resolver = fn($value) => new $className($value);
         }
 
-        return $value;
+        static::$cachedResolverForClass[$className] = $resolver;
+
+        return $resolver($value);
+
     }
 
     protected function convertInternalClassInstance(string $className, mixed $value): mixed
@@ -261,19 +265,17 @@ class ObjectMapper
             return (static::$cachedConverterForClass[$className])($value);
         }
 
-        $defaultConverter = fn($value) => $value;
+        $converter = fn($value): mixed => $value;
 
-        if ($className == \stdClass::class || is_subclass_of($className, \stdClass::class)) {
-            static::$cachedConverterForClass[$className] = $defaultConverter;
-        } else {
-            $classImplements = class_implements($className) ?: [];
+        $classImplements = class_implements($className) ?: [];
 
-            if (in_array(\DateTimeInterface::class, $classImplements)) {
-                static::$cachedConverterForClass[$className] = fn(\DateTimeInterface $value) => $value->format('c');
-            }
+        if (in_array(DateTimeInterface::class, $classImplements)) {
+            $converter = fn(DateTimeInterface $value) => $value->format('c');
         }
 
-        return (static::$cachedConverterForClass[$className])($value);
+        static::$cachedConverterForClass[$className] = $converter;
+
+        return $converter($value);
     }
 
     protected function resolveValue(mixed $value, ?ReflectionType $propertyType): mixed
