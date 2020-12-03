@@ -17,7 +17,7 @@ class ObjectMapperWriteValueTest extends TestCase
     {
         $data = $this->getData();
         /** @var User $user */
-        $user       = ObjectMapperFacade::readValue(json_encode($data), User::class);
+        $user = ObjectMapperFacade::readValue(json_encode($data), User::class);
         $jsonString = ObjectMapperFacade::writeValueAsString($user);
 
         unset($data['not_exists_field']);
@@ -32,7 +32,7 @@ class ObjectMapperWriteValueTest extends TestCase
     /** @test */
     public function it_can_override_output_value_via_getter()
     {
-        $user          = new ModelWithCustomGetter();
+        $user = new ModelWithCustomGetter();
         $user->company = 'nddcoder';
 
         $json = ObjectMapperFacade::writeValueAsString($user);
@@ -43,7 +43,7 @@ class ObjectMapperWriteValueTest extends TestCase
     /** @test */
     public function it_ignore_non_public_property_if_no_getter_exists()
     {
-        $user          = new ModelWithProtectedProperty();
+        $user = new ModelWithProtectedProperty();
         $user->company = 'nddcoder';
         $user->setPassword('123abc');
 
@@ -69,7 +69,7 @@ class ObjectMapperWriteValueTest extends TestCase
     public function it_just_return_json_encoded_string_when_value_is_array()
     {
         $data = [
-            'abc' => 123
+            'abc' => 123,
         ];
         $this->assertEquals(json_encode($data), ObjectMapperFacade::writeValueAsString($data));
     }
@@ -83,12 +83,12 @@ class ObjectMapperWriteValueTest extends TestCase
             public function toArray(): array
             {
                 return [
-                    'name' => 'dungnd'
+                    'name' => 'dungnd',
                 ];
             }
         };
         $this->assertEquals(json_encode([
-            'name' => 'dungnd'
+            'name' => 'dungnd',
         ]), ObjectMapperFacade::writeValueAsString($user));
     }
 
@@ -101,12 +101,12 @@ class ObjectMapperWriteValueTest extends TestCase
             public function toJson(): string
             {
                 return json_encode([
-                    'name' => 'dungnd'
+                    'name' => 'dungnd',
                 ]);
             }
         };
         $this->assertEquals(json_encode([
-            'name' => 'dungnd'
+            'name' => 'dungnd',
         ]), ObjectMapperFacade::writeValueAsString($user));
     }
 
@@ -119,24 +119,24 @@ class ObjectMapperWriteValueTest extends TestCase
             public function __toString(): string
             {
                 return json_encode([
-                    'name' => 'dungnd'
+                    'name' => 'dungnd',
                 ]);
             }
         };
 
         $this->assertEquals(json_encode([
-            'name' => 'dungnd'
+            'name' => 'dungnd',
         ]), ObjectMapperFacade::writeValueAsString($user));
     }
 
     /** @test */
     public function it_use_to_string_method_of_class_property()
     {
-        $user       = new ModelWithKeysWithToString();
+        $user = new ModelWithKeysWithToString();
         $user->keys = new ModelWithToStringMethod();
 
         $this->assertEquals(json_encode([
-            'keys' => 'masked data'
+            'keys' => 'masked data',
         ]), ObjectMapperFacade::writeValueAsString($user));
     }
 
@@ -149,15 +149,15 @@ class ObjectMapperWriteValueTest extends TestCase
     /** @test */
     public function it_can_cast_std_class_to_string()
     {
-        $stdClass       = new \stdClass();
+        $stdClass = new \stdClass();
         $stdClass->type = 'user';
-        $user           = new ModelWithStdClass();
-        $user->tags     = $stdClass;
+        $user = new ModelWithStdClass();
+        $user->tags = $stdClass;
 
         $this->assertEquals(json_encode([
             'tags' => [
-                'type' => 'user'
-            ]
+                'type' => 'user',
+            ],
         ]), ObjectMapperFacade::writeValueAsString($user));
     }
 }

@@ -3,7 +3,6 @@
 
 namespace Nddcoder\ObjectMapper\Tests\Model;
 
-
 class ModelWithToStringMethod
 {
     public string $p256dh;

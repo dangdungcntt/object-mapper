@@ -3,7 +3,6 @@
 
 namespace Nddcoder\ObjectMapper\Encoders;
 
-
 use Nddcoder\ObjectMapper\Contracts\ObjectMapperEncoder;
 
 class DateTimeInterfaceEncoder implements ObjectMapperEncoder

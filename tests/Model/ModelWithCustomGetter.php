@@ -3,7 +3,6 @@
 
 namespace Nddcoder\ObjectMapper\Tests\Model;
 
-
 use JetBrains\PhpStorm\Pure;
 
 class ModelWithCustomGetter

@@ -3,7 +3,6 @@
 
 namespace Nddcoder\ObjectMapper\Tests\Model;
 
-
 class ModelWithCustomSetter
 {
     public ?Keys $keys;
