@@ -3,7 +3,6 @@
 
 namespace Nddcoder\ObjectMapper\Tests\Model;
 
-
 use Nddcoder\ObjectMapper\Attributes\AppendJsonOutput;
 
 class ModelWithAppendJsonOutput
