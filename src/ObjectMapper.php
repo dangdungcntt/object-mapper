@@ -116,7 +116,6 @@ class ObjectMapper
 
         $className = $value::class;
 
-        /** @var ?ObjectMapperEncoder $encoder */
         $encoder = $this->findEncoder($className);
 
         if (!is_null($encoder)) {
@@ -246,7 +245,6 @@ class ObjectMapper
 
             $propertyClassName = $propertyType->getName();
 
-            /** @var ObjectMapperEncoder $encoder */
             $encoder = $this->findEncoder($propertyClassName);
 
             $resolvedValue = null;
