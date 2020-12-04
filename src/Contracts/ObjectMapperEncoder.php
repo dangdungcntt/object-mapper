@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Nddcoder\ObjectMapper\Contracts;
 
 interface ObjectMapperEncoder

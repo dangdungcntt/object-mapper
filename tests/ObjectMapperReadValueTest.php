@@ -2,6 +2,7 @@
 
 namespace Nddcoder\ObjectMapper\Tests;
 
+use Nddcoder\ObjectMapper\Contracts\ObjectMapperEncoder;
 use Nddcoder\ObjectMapper\Exceptions\AttributeMustNotBeNullException;
 use Nddcoder\ObjectMapper\Exceptions\CannotConstructUnionTypeException;
 use Nddcoder\ObjectMapper\Exceptions\ClassNotFoundException;
@@ -15,6 +16,7 @@ use Nddcoder\ObjectMapper\Tests\Model\ModelWithNullUnionType;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithStaticProperty;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithStdClass;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithUnionType;
+use Nddcoder\ObjectMapper\Tests\Model\Subscription;
 use Nddcoder\ObjectMapper\Tests\Model\User;
 use stdClass;
 
@@ -234,5 +236,46 @@ class ObjectMapperReadValueTest extends TestCase
         $this->assertInstanceOf(ModelWithStaticProperty::class, $model);
         $this->assertEquals('nddcoder', $model->company);
         $this->assertCount(0, $model::$cache);
+    }
+
+    /** @test */
+    public function it_should_set_encoders()
+    {
+        $encoderInstance = new class implements ObjectMapperEncoder {
+
+            public function encode(mixed $value, ?string $className = null): string
+            {
+                return json_encode($value);
+            }
+
+            public function decode(mixed $value, ?string $className = null): mixed
+            {
+                $keys = new Keys();
+                $keys->p256dh = $value['p256dh'];
+                $keys->auth = $value['auth'] . 'secret';
+                return $keys;
+            }
+        };
+
+        ObjectMapperFacade::addEncoder(Keys::class, $encoderInstance::class);
+
+        /** @var Subscription $subscription */
+        $subscription = ObjectMapperFacade::readValue(
+            json_encode(
+                [
+                    'endpoint' => 'nddcoder',
+                    'keys'   => [
+                        'p256dh' => '12345',
+                        'auth'   => '67890',
+                    ],
+                ]
+            ),
+            Subscription::class
+        );
+
+        ObjectMapperFacade::removeEncoder(Keys::class);
+
+        $this->assertInstanceOf(Subscription::class, $subscription);
+        $this->assertEquals('67890secret', $subscription->keys->auth);
     }
 }

@@ -1,11 +1,10 @@
-# Object mapper for laravel
+# Object mapper
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/nddcoder/laravel-object-mapper.svg?style=flat-square)](https://packagist.org/packages/nddcoder/laravel-object-mapper)
 [![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/dangdungcntt/laravel-object-mapper/run-tests?label=tests)](https://github.com/nddcoder/laravel-object-mapper/actions?query=workflow%3Arun-tests+branch%3Amaster)
 [![Total Downloads](https://img.shields.io/packagist/dt/nddcoder/laravel-object-mapper.svg?style=flat-square)](https://packagist.org/packages/nddcoder/laravel-object-mapper)
 
-
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+An `ObjectMapper` for PHP (inspired by ObjectMapper in java)
 
 ## Installation
 
@@ -72,7 +71,6 @@ use Nddcoder\ObjectMapper\ObjectMapperFacade;
 use Nddcoder\ObjectMapper\Attributes\JsonProperty;
 
 class User {
-    public ObjectId
     public string $username;
     protected string $password;
     
@@ -101,6 +99,42 @@ echo $post->content; //5f4dcc3b5aa765d61d8327deb882cf99
 //Convert object to json string
 $postJsonString = ObjectMapperFacade::writeValueAsString($post);
 echo $postJsonString; //{"title":"New Blog Post","body":"Blog body here"}
+```
+
+#### Encoders
+
+By default, package includes 2 encoders for `DateTimeInterface` and `stdClass`
+
+You can create your custom encoder by implements `ObjectMapperEncoder` interface
+
+```php
+use MongoDB\BSON\ObjectId;
+use Nddcoder\ObjectMapper\Contracts\ObjectMapperEncoder;
+
+class ObjectIdEncoder implements ObjectMapperEncoder
+{
+    public function encode(mixed $value, ?string $className = null): string
+    {
+        return (string) $value;
+    }
+
+    public function decode(mixed $value, ?string $className = null): mixed
+    {
+        return new ObjectId($value);
+    }
+}
+```
+
+and then add it using `ObjectMapper::addEncoder` function
+
+```php
+ObjectMapper::addEncoder(ObjectId::class, ObjectIdEncoder::class);
+```
+
+You can remove an encoder of a class using `ObjectMapper::removeEncoder` function 
+
+```php
+ObjectMapper::removeEncoder(ObjectId::class);
 ```
 
 ## Testing

@@ -2,7 +2,10 @@
 
 namespace Nddcoder\ObjectMapper;
 
+use DateTimeInterface;
 use Nddcoder\ObjectMapper\Contracts\ObjectMapperEncoder;
+use Nddcoder\ObjectMapper\Encoders\DateTimeInterfaceEncoder;
+use Nddcoder\ObjectMapper\Encoders\StdClassEncoder;
 use Nddcoder\ObjectMapper\Exceptions\AttributeMustNotBeNullException;
 use Nddcoder\ObjectMapper\Exceptions\CannotConstructUnionTypeException;
 use Nddcoder\ObjectMapper\Exceptions\ClassNotFoundException;
@@ -15,16 +18,35 @@ use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionProperty;
 use ReflectionUnionType;
+use stdClass;
 use Throwable;
 
 class ObjectMapper
 {
-    protected static array $cachedClassInfo = [];
+    protected static array $classInfoCache = [];
     protected static array $encoderCache = [];
+    protected static array $encoders = [
+        DateTimeInterface::class => DateTimeInterfaceEncoder::class,
+        stdClass::class          => StdClassEncoder::class
+    ];
 
     protected const CLASS_PUBLIC_PROPERTIES = 'public_properties';
     protected const CLASS_PRIVATE_AND_PROTECTED_PROPERTIES = 'private_and_protected_properties';
     protected const CLASS_GETTER_AND_SETTER = 'getter_and_setter';
+
+    public static function addEncoder(string $targetClass, string $encoderClass): void
+    {
+        static::$encoders[$targetClass] = $encoderClass;
+        //clear encoder cache
+        static::$encoderCache = [];
+    }
+
+    public static function removeEncoder(string $targetClass): void
+    {
+        unset(static::$encoders[$targetClass]);
+        //clear encoder cache
+        static::$encoderCache = [];
+    }
 
     /**
      * @param  string|array  $json
@@ -178,8 +200,8 @@ class ObjectMapper
      */
     protected function getClassInfo(string $className, string $field): mixed
     {
-        if (isset(static::$cachedClassInfo[$className])) {
-            return static::$cachedClassInfo[$className][$field] ?? null;
+        if (isset(static::$classInfoCache[$className])) {
+            return static::$classInfoCache[$className][$field] ?? null;
         }
 
         $reflectionClass = new ReflectionClass($className);
@@ -196,7 +218,7 @@ class ObjectMapper
             static::CLASS_GETTER_AND_SETTER                => $this->getGetterAndSetterMethods($reflectionClass),
         ];
 
-        static::$cachedClassInfo[$className] = $classInfo;
+        static::$classInfoCache[$className] = $classInfo;
 
         return $classInfo[$field] ?? null;
     }
@@ -334,9 +356,7 @@ class ObjectMapper
             return static::$encoderCache[$className];
         }
 
-        $encoders = config('laravel-object-mapper.encoders') ?? [];
-
-        foreach ($encoders as $targetClass => $encoderClass) {
+        foreach (static::$encoders as $targetClass => $encoderClass) {
             if ($className == $targetClass || is_subclass_of($className, $targetClass)) {
                 return static::$encoderCache[$className] = new $encoderClass();
             }

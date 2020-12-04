@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Nddcoder\ObjectMapper\Attributes;
 
 use Attribute;

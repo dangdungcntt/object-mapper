@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Nddcoder\ObjectMapper;
 
 class StrHelpers
