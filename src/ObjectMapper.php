@@ -294,12 +294,10 @@ class ObjectMapper
             return static::$encoderCache[$className];
         }
 
-        $classImplements = class_implements($className) ?: [];
-
         $encoders = config('laravel-object-mapper.encoders') ?? [];
 
         foreach ($encoders as $targetClass => $encoderClass) {
-            if ($targetClass == $className || in_array($targetClass, $classImplements)) {
+            if ($className == $targetClass || is_subclass_of($className, $targetClass)) {
                 return static::$encoderCache[$className] = new $encoderClass();
             }
         }
