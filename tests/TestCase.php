@@ -56,17 +56,17 @@ class TestCase extends Orchestra
             'messages' => [
                 [
                     'username' => 'nddcoder',
-                    'content' => 'Hello'
+                    'content' => 'Hello',
                 ],
                 [
                     'username' => 'bot',
-                    'content' => 'Hi'
-                ]
+                    'content' => 'Hi',
+                ],
             ],
             'messages_via_setter' => [
                 [
                     'username' => 'dangdungcntt',
-                    'content' => 'Hello'
+                    'content' => 'Hello',
                 ],
             ],
             'logs' => [
@@ -74,7 +74,7 @@ class TestCase extends Orchestra
                 ['sh', '-c', 'echo'],
                 ['sh', '-c', 'll'],
             ],
-            'groups' => 'invalid_array_value'
+            'groups' => 'invalid_array_value',
         ];
     }
 }
