@@ -1,9 +1,10 @@
 <?php
 
-
 namespace Nddcoder\ObjectMapper\Exceptions;
 
-class ClassNotFoundException extends \Exception
+use Exception;
+
+class ClassNotFoundException extends Exception
 {
     public static function make(string $className): self
     {

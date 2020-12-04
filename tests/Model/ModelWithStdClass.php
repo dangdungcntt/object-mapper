@@ -3,7 +3,9 @@
 
 namespace Nddcoder\ObjectMapper\Tests\Model;
 
+use stdClass;
+
 class ModelWithStdClass
 {
-    public \stdClass $tags;
+    public stdClass $tags;
 }

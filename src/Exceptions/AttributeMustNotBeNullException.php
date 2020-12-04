@@ -1,9 +1,10 @@
 <?php
 
-
 namespace Nddcoder\ObjectMapper\Exceptions;
 
-class AttributeMustNotBeNullException extends \Exception
+use Exception;
+
+class AttributeMustNotBeNullException extends Exception
 {
     public static function make(string $className, string $propertyName): self
     {

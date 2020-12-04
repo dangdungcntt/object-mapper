@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Nddcoder\ObjectMapper\Reflection;
-
 
 use Nddcoder\ObjectMapper\Attributes\AppendJsonOutput;
 use ReflectionAttribute;
@@ -21,15 +19,17 @@ class ClassMethod
 
     public static function fromReflectionMethod(\ReflectionMethod $reflectionMethod): static
     {
-        $appendJsonOutputAttribute = $reflectionMethod->getAttributes(AppendJsonOutput::class,
-                ReflectionAttribute::IS_INSTANCEOF)[0] ?? null;
+        $appendJsonOutputAttribute = $reflectionMethod->getAttributes(
+                AppendJsonOutput::class,
+                ReflectionAttribute::IS_INSTANCEOF
+            )[0] ?? null;
 
         return new static(
             name: $reflectionMethod->getName(),
             params: array_map(
-            fn(\ReflectionParameter $parameter) => ClassProperty::fromReflectorProperty($parameter),
-            $reflectionMethod->getParameters()
-        ),
+                      fn(\ReflectionParameter $parameter) => ClassProperty::fromReflectorProperty($parameter),
+                      $reflectionMethod->getParameters()
+                  ),
             appendJsonOutput: $appendJsonOutputAttribute?->newInstance()
         );
     }

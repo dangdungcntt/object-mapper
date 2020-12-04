@@ -22,8 +22,8 @@ class ClassProperty
         public ?JsonProperty $jsonProperty,
         public ?ArrayProperty $arrayProperty
     ) {
-
     }
+
     // @codeCoverageIgnoreEnd
 
     public static function fromReflectorProperty(ReflectionProperty|ReflectionParameter $reflectionProperty): static
@@ -33,8 +33,10 @@ class ClassProperty
                 ReflectionAttribute::IS_INSTANCEOF
             )[0] ?? null;
 
-        $arrayPropertyAttribute = $reflectionProperty->getAttributes(ArrayProperty::class,
-                ReflectionAttribute::IS_INSTANCEOF)[0] ?? null;
+        $arrayPropertyAttribute = $reflectionProperty->getAttributes(
+                ArrayProperty::class,
+                ReflectionAttribute::IS_INSTANCEOF
+            )[0] ?? null;
 
         return new static(
             name: $reflectionProperty->getName(),

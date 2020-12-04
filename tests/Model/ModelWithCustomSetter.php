@@ -16,6 +16,6 @@ class ModelWithCustomSetter
 
     public function setRequestNum(string $requestNum)
     {
-        $this->requestNumber = (int) $requestNum;
+        $this->requestNumber = (int)$requestNum;
     }
 }

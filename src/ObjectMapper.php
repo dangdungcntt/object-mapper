@@ -104,7 +104,7 @@ class ObjectMapper
         }
 
         if (!is_object($value)) {
-            return (string) $value;
+            return (string)$value;
         }
 
         if (method_exists($value, 'toArray')) {
@@ -167,7 +167,7 @@ class ObjectMapper
             $jsonObject[$classMethod->appendJsonOutput->field] = $this->convertOutputValue($value->{$methodName}());
         }
 
-        return json_encode((object) $jsonObject);
+        return json_encode((object)$jsonObject);
     }
 
     /**
@@ -264,19 +264,22 @@ class ObjectMapper
                     return null;
                 }
 
-                return array_map(function($item) use ($classProperty) {
-                    $itemProperty = new ClassProperty(
-                        name: '',
-                        type: new CustomReflectionType(
-                        customName: $classProperty->arrayProperty->type,
-                        isBuiltin: $this->isBuiltinType($classProperty->arrayProperty->type)
-                    ),
-                        jsonProperty: null,
-                        arrayProperty: null,
-                    );
+                return array_map(
+                    function ($item) use ($classProperty) {
+                        $itemProperty = new ClassProperty(
+                            name: '',
+                            type: new CustomReflectionType(
+                                      customName: $classProperty->arrayProperty->type,
+                                      isBuiltin: $this->isBuiltinType($classProperty->arrayProperty->type)
+                                  ),
+                            jsonProperty: null,
+                            arrayProperty: null,
+                        );
 
-                    return $this->resolveValue($item, $itemProperty);
-                }, $value);
+                        return $this->resolveValue($item, $itemProperty);
+                    },
+                    $value
+                );
             } catch (Throwable) {
                 return null;
             }
@@ -303,7 +306,7 @@ class ObjectMapper
 
         foreach ($classProperty->type->getTypes() as $type) {
             try {
-                $typeNames[] = $type->getName();
+                $typeNames[]      = $type->getName();
                 $subUnionProperty = new ClassProperty(
                     name: $classProperty->name,
                     type: $type,
@@ -355,13 +358,16 @@ class ObjectMapper
 
     protected function isBuiltinType(string $type): bool
     {
-        return array_key_exists($type, [
-            'int' => 1,
-            'bool' => 1,
-            'float' => 1,
-            'string' => 1,
-            'array' => 1,
-            'object' => 1,
-        ]);
+        return array_key_exists(
+            $type,
+            [
+                'int'    => 1,
+                'bool'   => 1,
+                'float'  => 1,
+                'string' => 1,
+                'array'  => 1,
+                'object' => 1,
+            ]
+        );
     }
 }
