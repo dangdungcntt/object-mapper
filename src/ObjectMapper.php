@@ -264,7 +264,7 @@ class ObjectMapper
             foreach ($propertyType->getTypes() as $type) {
                 try {
                     $typeNames[] = $type->getName();
-                    if ($v = $this->resolveValue($value, $type)) {
+                    if (!is_null($v = $this->resolveValue($value, $type))) {
                         return $v;
                     }
 
