@@ -3,6 +3,7 @@
 namespace Nddcoder\ObjectMapper\Tests;
 
 use Nddcoder\ObjectMapper\ObjectMapperFacade;
+use Nddcoder\ObjectMapper\Tests\Model\ModelWithAppendJsonOutput;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithCustomGetter;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithKeysWithToString;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithProtectedProperty;
@@ -17,7 +18,7 @@ class ObjectMapperWriteValueTest extends TestCase
     {
         $data = $this->getData();
         /** @var User $user */
-        $user = ObjectMapperFacade::readValue(json_encode($data), User::class);
+        $user       = ObjectMapperFacade::readValue(json_encode($data), User::class);
         $jsonString = ObjectMapperFacade::writeValueAsString($user);
 
         unset($data['not_exists_field']);
@@ -33,7 +34,7 @@ class ObjectMapperWriteValueTest extends TestCase
     /** @test */
     public function it_can_override_output_value_via_getter()
     {
-        $user = new ModelWithCustomGetter();
+        $user          = new ModelWithCustomGetter();
         $user->company = 'nddcoder';
 
         $json = ObjectMapperFacade::writeValueAsString($user);
@@ -44,7 +45,7 @@ class ObjectMapperWriteValueTest extends TestCase
     /** @test */
     public function it_ignore_non_public_property_if_no_getter_exists()
     {
-        $user = new ModelWithProtectedProperty();
+        $user          = new ModelWithProtectedProperty();
         $user->company = 'nddcoder';
         $user->setPassword('123abc');
 
@@ -133,7 +134,7 @@ class ObjectMapperWriteValueTest extends TestCase
     /** @test */
     public function it_use_to_string_method_of_class_property()
     {
-        $user = new ModelWithKeysWithToString();
+        $user       = new ModelWithKeysWithToString();
         $user->keys = new ModelWithToStringMethod();
 
         $this->assertEquals(json_encode([
@@ -150,15 +151,29 @@ class ObjectMapperWriteValueTest extends TestCase
     /** @test */
     public function it_can_cast_std_class_to_string()
     {
-        $stdClass = new \stdClass();
+        $stdClass       = new \stdClass();
         $stdClass->type = 'user';
-        $user = new ModelWithStdClass();
-        $user->tags = $stdClass;
+        $user           = new ModelWithStdClass();
+        $user->tags     = $stdClass;
 
         $this->assertEquals(json_encode([
             'tags' => [
                 'type' => 'user',
             ],
         ]), ObjectMapperFacade::writeValueAsString($user));
+    }
+
+    /** @test */
+    public function it_should_append_field_to_output()
+    {
+        $model            = new ModelWithAppendJsonOutput();
+        $model->firstName = 'Dung';
+        $model->lastName  = 'Nguyen Dang';
+
+        $this->assertEquals(json_encode([
+            'first_name' => 'Dung',
+            'last_name' => 'Nguyen Dang',
+            'full_name' => 'Dung Nguyen Dang'
+        ]), ObjectMapperFacade::writeValueAsString($model));
     }
 }

@@ -1,8 +1,6 @@
 <?php
 
-
-namespace Nddcoder\ObjectMapper;
-
+namespace Nddcoder\ObjectMapper\Reflection;
 
 class CustomReflectionType extends \ReflectionNamedType
 {
@@ -25,9 +23,11 @@ class CustomReflectionType extends \ReflectionNamedType
         return $this->isBuiltin;
     }
 
+    // @codeCoverageIgnoreStart
     //Fix Psalm error
     public function getTypes(): array
     {
         return [];
     }
+    // @codeCoverageIgnoreEnd
 }

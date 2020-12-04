@@ -1,8 +1,6 @@
 <?php
 
-
-namespace Nddcoder\ObjectMapper;
-
+namespace Nddcoder\ObjectMapper\Reflection;
 
 use Nddcoder\ObjectMapper\Attributes\ArrayProperty;
 use Nddcoder\ObjectMapper\Attributes\JsonProperty;

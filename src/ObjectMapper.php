@@ -6,6 +6,9 @@ use Nddcoder\ObjectMapper\Contracts\ObjectMapperEncoder;
 use Nddcoder\ObjectMapper\Exceptions\AttributeMustNotBeNullException;
 use Nddcoder\ObjectMapper\Exceptions\CannotConstructUnionTypeException;
 use Nddcoder\ObjectMapper\Exceptions\ClassNotFoundException;
+use Nddcoder\ObjectMapper\Reflection\ClassMethod;
+use Nddcoder\ObjectMapper\Reflection\ClassProperty;
+use Nddcoder\ObjectMapper\Reflection\CustomReflectionType;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
@@ -155,6 +158,15 @@ class ObjectMapper
             $jsonObject[$outputField] = $this->convertOutputValue($value->{$camelCaseMethod}());
         }
 
+        foreach ($getterAndSetter as $methodName => $classMethod) {
+            /** @var ClassMethod $classMethod */
+            if (!$classMethod->appendJsonOutput) {
+                continue;
+            }
+
+            $jsonObject[$classMethod->appendJsonOutput->field] = $this->convertOutputValue($value->{$methodName}());
+        }
+
         return json_encode((object) $jsonObject);
     }
 
@@ -191,10 +203,17 @@ class ObjectMapper
 
     protected function getClassProperties(ReflectionClass $reflectionClass, ?int $filter = null): array
     {
-        return array_map(
-            fn(ReflectionProperty $property) => ClassProperty::fromReflectorProperty($property),
-            $reflectionClass->getProperties($filter)
-        );
+        $results = [];
+
+        foreach ($reflectionClass->getProperties($filter) as $property) {
+            if ($property->isStatic()) {
+                continue;
+            }
+
+            $results[] = ClassProperty::fromReflectorProperty($property);
+        }
+
+        return $results;
     }
 
     protected function getGetterAndSetterMethods(ReflectionClass $reflectionClass): array
