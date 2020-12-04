@@ -8,6 +8,7 @@ use Nddcoder\ObjectMapper\Exceptions\ClassNotFoundException;
 use Nddcoder\ObjectMapper\ObjectMapperFacade;
 use Nddcoder\ObjectMapper\Tests\Model\DeviceInfo;
 use Nddcoder\ObjectMapper\Tests\Model\Keys;
+use Nddcoder\ObjectMapper\Tests\Model\Message;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithCustomSetter;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithNullableString;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithNullUnionType;
@@ -36,8 +37,16 @@ class ObjectMapperReadValueTest extends TestCase
         $this->assertEquals($data['payout'], $user->payout);
         $this->assertEquals($data['user_agent'], $user->userAgent);
         $this->assertEquals(date_create($data['created_at'])->getTimestamp(), $user->createdAt->getTimestamp());
+        $this->assertEquals(date_create($data['updated_at'])->getTimestamp(), $user->updatedAt->getTimestamp());
         $this->assertEquals($data['body'], $user->description);
         $this->assertEquals($data['title'], $user->title);
+        $this->assertCount(2, $user->messages);
+        $this->assertInstanceOf(Message::class, $user->messages[0]);
+        $this->assertCount(1, $user->messagesViaSetter);
+        $this->assertInstanceOf(Message::class, $user->messagesViaSetter[0]);
+        $this->assertCount(3, $user->logs);
+        $this->assertCount(3, $user->logs[0]);
+        $this->assertNull($user->groups);
     }
 
     /** @test */

@@ -22,6 +22,7 @@ class ObjectMapperWriteValueTest extends TestCase
 
         unset($data['not_exists_field']);
         ksort($data);
+        $data['groups'] = null;
 
         $decodedJsonObject = json_decode($jsonString, true);
         ksort($decodedJsonObject);

@@ -53,6 +53,28 @@ class TestCase extends Orchestra
             'body' => 'json property description',
             'title' => null,
             'not_exists_field' => 123,
+            'messages' => [
+                [
+                    'username' => 'nddcoder',
+                    'content' => 'Hello'
+                ],
+                [
+                    'username' => 'bot',
+                    'content' => 'Hi'
+                ]
+            ],
+            'messages_via_setter' => [
+                [
+                    'username' => 'dangdungcntt',
+                    'content' => 'Hello'
+                ],
+            ],
+            'logs' => [
+                ['sh', '-c', 'cat'],
+                ['sh', '-c', 'echo'],
+                ['sh', '-c', 'll'],
+            ],
+            'groups' => 'invalid_array_value'
         ];
     }
 }

@@ -2,18 +2,15 @@
 
 namespace Nddcoder\ObjectMapper;
 
-use Nddcoder\ObjectMapper\Attributes\JsonProperty;
 use Nddcoder\ObjectMapper\Contracts\ObjectMapperEncoder;
 use Nddcoder\ObjectMapper\Exceptions\AttributeMustNotBeNullException;
 use Nddcoder\ObjectMapper\Exceptions\CannotConstructUnionTypeException;
 use Nddcoder\ObjectMapper\Exceptions\ClassNotFoundException;
-use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionProperty;
-use ReflectionType;
 use ReflectionUnionType;
 use Throwable;
 
@@ -48,29 +45,34 @@ class ObjectMapper
 
         $nulledProperties = [];
 
-        foreach ($publicProperties as [$propertyName, $propertyType, $jsonPropertyName]) {
-            $value = $data[$jsonPropertyName ?? StrHelpers::snake($propertyName)] ?? null;
+        foreach ($publicProperties as $classProperty) {
+            /** @var ClassProperty $classProperty */
+            $value = $data[$classProperty->jsonProperty?->name ?? StrHelpers::snake($classProperty->name)] ?? null;
 
-            $resolvedValue = $this->resolveValue($value, $propertyType);
+            $resolvedValue = $this->resolveValue($value, $classProperty);
 
-            if (is_null($resolvedValue) && !is_null($propertyType) && !$propertyType->allowsNull()) {
-                $nulledProperties[] = $propertyName;
+            if (is_null($resolvedValue) && !is_null($classProperty->type) && !$classProperty->type->allowsNull()) {
+                $nulledProperties[] = $classProperty->name;
                 continue;
             }
 
-            $instance->{$propertyName} = $resolvedValue;
+            $instance->{$classProperty->name} = $resolvedValue;
         }
 
         foreach ($data as $snakeCaseProperty => $value) {
             if (array_key_exists($camelCaseMethod = 'set'.StrHelpers::studly($snakeCaseProperty), $getterAndSetter)) {
-                $paramType = $getterAndSetter[$camelCaseMethod][0]?->getType();
-                $instance->{$camelCaseMethod}($this->resolveValue($value, $paramType));
+                /** @var ClassMethod $classMethod */
+                $classMethod = $getterAndSetter[$camelCaseMethod];
+
+                $instance->{$camelCaseMethod}($this->resolveValue($value, $classMethod->params[0] ?? null));
                 continue;
             }
 
             if (array_key_exists($snakeCaseMethod = 'set'.ucfirst($snakeCaseProperty), $getterAndSetter)) {
-                $paramType = $getterAndSetter[$snakeCaseMethod][0]?->getType();
-                $instance->{$snakeCaseMethod}($this->resolveValue($value, $paramType));
+                /** @var ClassMethod $classMethod */
+                $classMethod = $getterAndSetter[$snakeCaseMethod];
+
+                $instance->{$snakeCaseMethod}($this->resolveValue($value, $classMethod->params[0] ?? null));
                 continue;
             }
         }
@@ -128,21 +130,23 @@ class ObjectMapper
 
         $jsonObject = [];
 
-        foreach ($publicProperties as [$propertyName, $_, $jsonPropertyName]) {
-            $outputField     = $jsonPropertyName ?? StrHelpers::snake($propertyName);
-            $camelCaseMethod = 'get'.ucfirst($propertyName);
+        foreach ($publicProperties as $classProperty) {
+            /** @var ClassProperty $classProperty */
+            $outputField     = $classProperty->jsonProperty?->name ?? StrHelpers::snake($classProperty->name);
+            $camelCaseMethod = 'get'.ucfirst($classProperty->name);
             $outputValue     = array_key_exists($camelCaseMethod, $getterAndSetter)
                 ? $value->{$camelCaseMethod}()
-                : $value->{$propertyName};
+                : $value->{$classProperty->name};
 
             $jsonObject[$outputField] = $this->convertOutputValue($outputValue);
         }
 
         $privateAndProtectedProperties = $this->getClassInfo($className, self::CLASS_PRIVATE_AND_PROTECTED_PROPERTIES);
 
-        foreach ($privateAndProtectedProperties as [$propertyName, $_, $jsonPropertyName]) {
-            $outputField     = $jsonPropertyName ?? StrHelpers::snake($propertyName);
-            $camelCaseMethod = 'get'.ucfirst($propertyName);
+        foreach ($privateAndProtectedProperties as $classProperty) {
+            /** @var ClassProperty $classProperty */
+            $outputField     = $classProperty->jsonProperty?->name ?? StrHelpers::snake($classProperty->name);
+            $camelCaseMethod = 'get'.ucfirst($classProperty->name);
 
             if (!array_key_exists($camelCaseMethod, $getterAndSetter)) {
                 continue;
@@ -188,20 +192,7 @@ class ObjectMapper
     protected function getClassProperties(ReflectionClass $reflectionClass, ?int $filter = null): array
     {
         return array_map(
-            function (ReflectionProperty $property) {
-                $jsonProperty = $property->getAttributes(
-                        JsonProperty::class,
-                        ReflectionAttribute::IS_INSTANCEOF
-                    )[0] ?? null;
-
-                $jsonPropertyName = null;
-
-                if (!is_null($jsonProperty)) {
-                    $jsonPropertyName = $jsonProperty->newInstance()->name;
-                }
-
-                return [$property->getName(), $property->getType(), $jsonPropertyName];
-            },
+            fn(ReflectionProperty $property) => ClassProperty::fromReflectorProperty($property),
             $reflectionClass->getProperties($filter)
         );
     }
@@ -211,79 +202,108 @@ class ObjectMapper
         $getterAndSetters = [];
         $methods          = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
         foreach ($methods as $method) {
-            if (str_starts_with($method->getName(), 'get')) {
-                $getterAndSetters[$method->getName()] = true;
-                continue;
-            }
-
-            if (str_starts_with($method->getName(), 'set')) {
-                $getterAndSetters[$method->getName()] = $method->getParameters();
+            if (str_starts_with($method->getName(), 'get') || str_starts_with($method->getName(), 'set')) {
+                $getterAndSetters[$method->getName()] = ClassMethod::fromReflectionMethod($method);
             }
         }
         return $getterAndSetters;
     }
 
-    protected function resolveValue(mixed $value, ?ReflectionType $propertyType): mixed
+    protected function resolveValue(mixed $value, ClassProperty $classProperty): mixed
     {
         if (is_null($value)) {
             return null;
         }
 
-        if (is_null($propertyType)) {
+        if (is_null($classProperty->type)) {
             return $value;
         }
 
-        if ($propertyType instanceof ReflectionNamedType) {
-            if ($propertyType->isBuiltin()) {
-                try {
-                    settype($value, $propertyType->getName());
-                    return $value;
-                } catch (Throwable) {
-                    return null;
-                }
-            }
-
-            $propertyClassName = $propertyType->getName();
-
-            $encoder = $this->findEncoder($propertyClassName);
-
-            $resolvedValue = null;
-            if (!is_null($encoder)) {
-                $resolvedValue = $encoder->decode($value, $propertyClassName);
-            } elseif (is_array($value)) {
-                $resolvedValue = $this->readValue($value, $propertyClassName);
-            }
-
-            return $resolvedValue instanceof $propertyClassName ? $resolvedValue : null;
+        if ($classProperty->type instanceof ReflectionNamedType) {
+            return $this->resolveNamedType($value, $classProperty);
         }
 
-        if ($propertyType instanceof ReflectionUnionType) {
-            $exceptions = [];
-            $typeNames  = [];
-
-            foreach ($propertyType->getTypes() as $type) {
-                try {
-                    $typeNames[] = $type->getName();
-                    if (!is_null($v = $this->resolveValue($value, $type))) {
-                        return $v;
-                    }
-
-                    if ($type->getName() === 'null') {
-                        return null;
-                    }
-                } catch (Throwable $exception) {
-                    $exceptions[] = $exception;
-                }
-            }
-
-            if (!empty($exceptions)) {
-                throw CannotConstructUnionTypeException::make(join('|', $typeNames), $exceptions[0]);
-            }
+        if ($classProperty->type instanceof ReflectionUnionType) {
+            return $this->resolveUnionType($value, $classProperty);
         }
         // @codeCoverageIgnoreStart
         // Never reached here because ReflectionType has only 2 implementations: ReflectionUnionType, ReflectionNamedType
         return null;
         // @codeCoverageIgnoreEnd
+    }
+
+    protected function resolveNamedType(mixed $value, ?ClassProperty $classProperty): mixed
+    {
+        if ($classProperty->type->isBuiltin()) {
+            try {
+                if (!$classProperty->arrayProperty || $classProperty->type->getName() != 'array') {
+                    settype($value, $classProperty->type->getName());
+                    return $value;
+                }
+
+                if (!is_array($value)) {
+                    return null;
+                }
+
+                return array_map(function($item) use ($classProperty) {
+                    $itemProperty = new ClassProperty(
+                        name: '',
+                        type: new CustomReflectionType(
+                        customName: $classProperty->arrayProperty->type,
+                        isBuiltin: $this->isBuiltinType($classProperty->arrayProperty->type)
+                    ),
+                        jsonProperty: null,
+                        arrayProperty: null,
+                    );
+
+                    return $this->resolveValue($item, $itemProperty);
+                }, $value);
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        $propertyClassName = $classProperty->type->getName();
+
+        $encoder = $this->findEncoder($propertyClassName);
+
+        $resolvedValue = null;
+        if (!is_null($encoder)) {
+            $resolvedValue = $encoder->decode($value, $propertyClassName);
+        } elseif (is_array($value)) {
+            $resolvedValue = $this->readValue($value, $propertyClassName);
+        }
+
+        return $resolvedValue instanceof $propertyClassName ? $resolvedValue : null;
+    }
+
+    protected function resolveUnionType(mixed $value, ?ClassProperty $classProperty): mixed
+    {
+        $exceptions = [];
+        $typeNames  = [];
+
+        foreach ($classProperty->type->getTypes() as $type) {
+            try {
+                $typeNames[] = $type->getName();
+                $subUnionProperty = new ClassProperty(
+                    name: $classProperty->name,
+                    type: $type,
+                    jsonProperty: $classProperty->jsonProperty,
+                    arrayProperty: $classProperty->arrayProperty
+                );
+                if (!is_null($v = $this->resolveValue($value, $subUnionProperty))) {
+                    return $v;
+                }
+
+                if ($type->getName() === 'null') {
+                    return null;
+                }
+            } catch (Throwable $exception) {
+                $exceptions[] = $exception;
+            }
+        }
+
+        throw CannotConstructUnionTypeException::make(join('|', $typeNames), $exceptions[0]);
     }
 
     protected function findEncoder(string $className): ?ObjectMapperEncoder
@@ -312,5 +332,17 @@ class ObjectMapper
         $stringOutput = $this->writeValueAsString($outputValue);
 
         return json_decode($stringOutput, true) ?? $stringOutput;
+    }
+
+    protected function isBuiltinType(string $type): bool
+    {
+        return array_key_exists($type, [
+            'int' => 1,
+            'bool' => 1,
+            'float' => 1,
+            'string' => 1,
+            'array' => 1,
+            'object' => 1,
+        ]);
     }
 }
