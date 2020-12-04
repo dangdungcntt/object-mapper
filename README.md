@@ -31,9 +31,51 @@ $user = ObjectMapperFacade::readValue($jsonString, User::class);
 echo $user->name; //Dung Nguyen Dang
 echo $user->email; //dangdungcntt@gmail.com
 
+//You can pass an associative array to readValue function instead of string
+$user = ObjectMapperFacade::readValue(['name' => 'Dung Nguyen Dang', 'email' => 'dangdungcntt@gmail.com'], User::class);
+
 //Convert object to json string
 $userJsonString = ObjectMapperFacade::writeValueAsString($user);
 echo $userJsonString; //{"name":"Dung Nguyen Dang","email":"dangdungcntt@gmail.com"}
+```
+
+#### Array Property
+
+Use `ArrayProperty` Attribute to specific type of array item
+
+``` php
+
+use Nddcoder\ObjectMapper\ObjectMapperFacade;
+use Nddcoder\ObjectMapper\Attributes\ArrayProperty;
+
+class Comment {
+    public string $from;
+    public string $content;
+}
+
+class Post {
+    public string $title;
+    
+    #[ArrayProperty(Comment::class)]
+    public array $comments;
+}
+
+//Make object from json string
+$jsonString = '{"title":"New Blog Post","comments":[{"from":"nddcoder","content":"Hello"}]}';
+$post = ObjectMapperFacade::readValue($jsonString, Post::class);
+echo $post->title; //New Blog Post
+print_r($post->comments);
+/*
+Array
+(
+    [0] => Comment Object
+        (
+            [from] => nddcoder
+            [content] => Hello
+        )
+
+)
+*/
 ```
 
 #### Custom JSON property
@@ -91,19 +133,19 @@ class User {
 }
 
 //Make object from json string
-$jsonString = '{"username":"nddcoder","password":"Blog body here"}';
-$post = ObjectMapperFacade::readValue($jsonString, Post::class);
-echo $post->title; //New Blog Post
-echo $post->content; //5f4dcc3b5aa765d61d8327deb882cf99
+$jsonString = '{"username":"nddcoder","password":"secret"}';
+$user = ObjectMapperFacade::readValue($jsonString, User::class);
+echo $user->username; //nddcoder
+echo $user->content; //5ebe2294ecd0e0f08eab7690d2a6ee69
 
 //Convert object to json string
-$postJsonString = ObjectMapperFacade::writeValueAsString($post);
-echo $postJsonString; //{"title":"New Blog Post","body":"Blog body here"}
+$userJsonString = ObjectMapperFacade::writeValueAsString($user);
+echo $userJsonString; //{"username":"nddcoder","password":null}
 ```
 
 #### Encoders
 
-By default, package includes 2 encoders for `DateTimeInterface` and `stdClass`
+By default, package included 2 encoders for `DateTimeInterface` and `stdClass`
 
 You can create your custom encoder by implements `ObjectMapperEncoder` interface
 
