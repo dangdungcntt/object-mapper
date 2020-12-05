@@ -18,24 +18,26 @@ composer require nddcoder/object-mapper
 
 ``` php
 
-use Nddcoder\ObjectMapper\ObjectMapperFacade;
+use Nddcoder\ObjectMapper\ObjectMapper;
 
 class User {
     public string $name;
     public string $email;
 }
 
+$objectMapper = new ObjectMapper();
+
 //Make object from json string
 $jsonString = '{"name":"Dung Nguyen Dang","email":"dangdungcntt@gmail.com"}';
-$user = ObjectMapperFacade::readValue($jsonString, User::class);
+$user = $objectMapper->readValue($jsonString, User::class);
 echo $user->name; //Dung Nguyen Dang
 echo $user->email; //dangdungcntt@gmail.com
 
 //You can pass an associative array to readValue function instead of string
-$user = ObjectMapperFacade::readValue(['name' => 'Dung Nguyen Dang', 'email' => 'dangdungcntt@gmail.com'], User::class);
+$user = $objectMapper->readValue(['name' => 'Dung Nguyen Dang', 'email' => 'dangdungcntt@gmail.com'], User::class);
 
 //Convert object to json string
-$userJsonString = ObjectMapperFacade::writeValueAsString($user);
+$userJsonString = $objectMapper->writeValueAsString($user);
 echo $userJsonString; //{"name":"Dung Nguyen Dang","email":"dangdungcntt@gmail.com"}
 ```
 
@@ -45,7 +47,7 @@ Use `ArrayProperty` Attribute to specific type of array item
 
 ``` php
 
-use Nddcoder\ObjectMapper\ObjectMapperFacade;
+use Nddcoder\ObjectMapper\ObjectMapper;
 use Nddcoder\ObjectMapper\Attributes\ArrayProperty;
 
 class Comment {
@@ -60,9 +62,11 @@ class Post {
     public array $comments;
 }
 
+$objectMapper = new ObjectMapper();
+
 //Make object from json string
 $jsonString = '{"title":"New Blog Post","comments":[{"from":"nddcoder","content":"Hello"}]}';
-$post = ObjectMapperFacade::readValue($jsonString, Post::class);
+$post = $objectMapper->readValue($jsonString, Post::class);
 echo $post->title; //New Blog Post
 print_r($post->comments);
 /*
@@ -83,7 +87,7 @@ Array
 You can use `JsonProperty('<propertyName>')` to custom name for a property
 ``` php
 
-use Nddcoder\ObjectMapper\ObjectMapperFacade;
+use Nddcoder\ObjectMapper\ObjectMapper;
 use Nddcoder\ObjectMapper\Attributes\JsonProperty;
 
 class Post {
@@ -93,14 +97,16 @@ class Post {
     public string $content;
 }
 
+$objectMapper = new ObjectMapper();
+
 //Make object from json string
 $jsonString = '{"title":"New Blog Post","body":"Blog body here"}';
-$post = ObjectMapperFacade::readValue($jsonString, Post::class);
+$post = $objectMapper->readValue($jsonString, Post::class);
 echo $post->title; //New Blog Post
 echo $post->content; //Blog body here
 
 //Convert object to json string
-$postJsonString = ObjectMapperFacade::writeValueAsString($post);
+$postJsonString = $objectMapper->writeValueAsString($post);
 echo $postJsonString; //{"title":"New Blog Post","body":"Blog body here"}
 ```
 
@@ -109,7 +115,7 @@ echo $postJsonString; //{"title":"New Blog Post","body":"Blog body here"}
 You can define getter/setter to custom behavior when get/set a property
 ``` php
 
-use Nddcoder\ObjectMapper\ObjectMapperFacade;
+use Nddcoder\ObjectMapper\ObjectMapper;
 use Nddcoder\ObjectMapper\Attributes\JsonProperty;
 
 class User {
@@ -132,14 +138,16 @@ class User {
     }
 }
 
+$objectMapper = new ObjectMapper();
+
 //Make object from json string
 $jsonString = '{"username":"nddcoder","password":"secret"}';
-$user = ObjectMapperFacade::readValue($jsonString, User::class);
+$user = $objectMapper->readValue($jsonString, User::class);
 echo $user->username; //nddcoder
 echo $user->content; //5ebe2294ecd0e0f08eab7690d2a6ee69
 
 //Convert object to json string
-$userJsonString = ObjectMapperFacade::writeValueAsString($user);
+$userJsonString = $objectMapper->writeValueAsString($user);
 echo $userJsonString; //{"username":"nddcoder","password":null}
 ```
 
