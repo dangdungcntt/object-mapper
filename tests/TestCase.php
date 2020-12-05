@@ -2,29 +2,15 @@
 
 namespace Nddcoder\ObjectMapper\Tests;
 
-use Nddcoder\ObjectMapper\ObjectMapperServiceProvider;
-use Orchestra\Testbench\TestCase as Orchestra;
+use Nddcoder\ObjectMapper\ObjectMapper;
 
-class TestCase extends Orchestra
+class TestCase extends \PHPUnit\Framework\TestCase
 {
-    protected function getPackageProviders($app)
-    {
-        return [
-            ObjectMapperServiceProvider::class,
-        ];
-    }
+    protected ObjectMapper $objectMapper;
 
-    public function getEnvironmentSetUp($app)
+    protected function setUp(): void
     {
-        $app['config']->set('database.default', 'sqlite');
-        $app['config']->set(
-            'database.connections.sqlite',
-            [
-                'driver'   => 'sqlite',
-                'database' => ':memory:',
-                'prefix'   => '',
-            ]
-        );
+        $this->objectMapper = new ObjectMapper();
     }
 
     public function getData(): array

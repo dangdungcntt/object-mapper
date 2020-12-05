@@ -6,7 +6,6 @@ use Nddcoder\ObjectMapper\Contracts\ObjectMapperEncoder;
 use Nddcoder\ObjectMapper\Exceptions\AttributeMustNotBeNullException;
 use Nddcoder\ObjectMapper\Exceptions\CannotConstructUnionTypeException;
 use Nddcoder\ObjectMapper\Exceptions\ClassNotFoundException;
-use Nddcoder\ObjectMapper\ObjectMapperFacade;
 use Nddcoder\ObjectMapper\Tests\Model\DeviceInfo;
 use Nddcoder\ObjectMapper\Tests\Model\Keys;
 use Nddcoder\ObjectMapper\Tests\Model\Message;
@@ -28,7 +27,7 @@ class ObjectMapperReadValueTest extends TestCase
         $data = $this->getData();
 
         /** @var User $user */
-        $user = ObjectMapperFacade::readValue(json_encode($data), User::class);
+        $user = $this->objectMapper->readValue(json_encode($data), User::class);
 
         $this->assertInstanceOf(User::class, $user);
         $this->assertEquals($data['id'], $user->get_id());
@@ -57,7 +56,7 @@ class ObjectMapperReadValueTest extends TestCase
     {
         $this->expectException(ClassNotFoundException::class);
 
-        ObjectMapperFacade::readValue('{}', NotExistsClass::class);
+        $this->objectMapper->readValue('{}', NotExistsClass::class);
     }
 
     /** @test */
@@ -68,7 +67,7 @@ class ObjectMapperReadValueTest extends TestCase
 
         $this->expectException(AttributeMustNotBeNullException::class);
 
-        ObjectMapperFacade::readValue(json_encode($data), User::class);
+        $this->objectMapper->readValue(json_encode($data), User::class);
     }
 
     /** @test */
@@ -81,13 +80,15 @@ class ObjectMapperReadValueTest extends TestCase
                 'auth'   => 'authKey',
             ],
             'request_num' => '1234',
+            'req_id'      => 'abc123'
         ];
 
         /** @var ModelWithCustomSetter $user */
-        $user = ObjectMapperFacade::readValue(json_encode($data), ModelWithCustomSetter::class);
+        $user = $this->objectMapper->readValue(json_encode($data), ModelWithCustomSetter::class);
 
         $this->assertEquals(1234, $user->requestNumber);
         $this->assertEquals('authKey', $user->keys->auth);
+        $this->assertEquals('req-abc123', $user->req_id);
     }
 
     /** @test */
@@ -97,10 +98,11 @@ class ObjectMapperReadValueTest extends TestCase
             'company'     => 'nddcoder',
             'auth_key'    => 'invalid_type_of_Keys',
             'request_num' => '1234',
+            'req_id'      => 'abc123'
         ];
 
         /** @var ModelWithCustomSetter $user */
-        $user = ObjectMapperFacade::readValue(json_encode($data), ModelWithCustomSetter::class);
+        $user = $this->objectMapper->readValue(json_encode($data), ModelWithCustomSetter::class);
 
         $this->assertEquals('nddcoder', $user->company);
         $this->assertIsInt($user->requestNumber);
@@ -119,7 +121,7 @@ class ObjectMapperReadValueTest extends TestCase
         ];
 
         /** @var ModelWithNullableString $user */
-        $user = ObjectMapperFacade::readValue(json_encode($data), ModelWithNullableString::class);
+        $user = $this->objectMapper->readValue(json_encode($data), ModelWithNullableString::class);
 
         $this->assertNull($user->company);
     }
@@ -127,7 +129,7 @@ class ObjectMapperReadValueTest extends TestCase
     /** @test */
     public function it_can_set_std_class_value()
     {
-        $user = ObjectMapperFacade::readValue(
+        $user = $this->objectMapper->readValue(
             json_encode(
                 [
                     'tags' => [
@@ -147,7 +149,7 @@ class ObjectMapperReadValueTest extends TestCase
     /** @test */
     public function it_can_set_union_type_value()
     {
-        $modelWithDeviceInfo = ObjectMapperFacade::readValue(
+        $modelWithDeviceInfo = $this->objectMapper->readValue(
             json_encode(
                 [
                     'magic_field' => [
@@ -168,7 +170,7 @@ class ObjectMapperReadValueTest extends TestCase
         $this->assertInstanceOf(DeviceInfo::class, $modelWithDeviceInfo->magicField);
         $this->assertEquals('smartphone', $modelWithDeviceInfo->magicField->deviceType);
 
-        $modelWithKeys = ObjectMapperFacade::readValue(
+        $modelWithKeys = $this->objectMapper->readValue(
             json_encode(
                 [
                     'magic_field' => [
@@ -189,7 +191,7 @@ class ObjectMapperReadValueTest extends TestCase
     public function it_should_throw_exception_when_cannot_set_union_type_value()
     {
         $this->expectException(CannotConstructUnionTypeException::class);
-        ObjectMapperFacade::readValue(
+        $this->objectMapper->readValue(
             json_encode(
                 [
                     'magic_field' => [
@@ -204,7 +206,7 @@ class ObjectMapperReadValueTest extends TestCase
     /** @test */
     public function it_should_not_throw_exception_when_union_has_type_null()
     {
-        $model = ObjectMapperFacade::readValue(
+        $model = $this->objectMapper->readValue(
             json_encode(
                 [
                     'magic_field' => [
@@ -223,7 +225,7 @@ class ObjectMapperReadValueTest extends TestCase
     public function it_should_skip_static_property()
     {
         /** @var ModelWithStaticProperty $model */
-        $model = ObjectMapperFacade::readValue(
+        $model = $this->objectMapper->readValue(
             json_encode(
                 [
                     'company' => 'nddcoder',
@@ -250,21 +252,21 @@ class ObjectMapperReadValueTest extends TestCase
 
             public function decode(mixed $value, ?string $className = null): mixed
             {
-                $keys = new Keys();
+                $keys         = new Keys();
                 $keys->p256dh = $value['p256dh'];
-                $keys->auth = $value['auth'] . 'secret';
+                $keys->auth   = $value['auth'].'secret';
                 return $keys;
             }
         };
 
-        ObjectMapperFacade::addEncoder(Keys::class, $encoderInstance::class);
+        $this->objectMapper->addEncoder(Keys::class, $encoderInstance::class);
 
         /** @var Subscription $subscription */
-        $subscription = ObjectMapperFacade::readValue(
+        $subscription = $this->objectMapper->readValue(
             json_encode(
                 [
                     'endpoint' => 'nddcoder',
-                    'keys'   => [
+                    'keys'     => [
                         'p256dh' => '12345',
                         'auth'   => '67890',
                     ],
@@ -273,7 +275,7 @@ class ObjectMapperReadValueTest extends TestCase
             Subscription::class
         );
 
-        ObjectMapperFacade::removeEncoder(Keys::class);
+        $this->objectMapper->removeEncoder(Keys::class);
 
         $this->assertInstanceOf(Subscription::class, $subscription);
         $this->assertEquals('67890secret', $subscription->keys->auth);

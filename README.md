@@ -1,8 +1,8 @@
 # Object mapper
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/nddcoder/laravel-object-mapper.svg?style=flat-square)](https://packagist.org/packages/nddcoder/laravel-object-mapper)
-[![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/dangdungcntt/laravel-object-mapper/run-tests?label=tests)](https://github.com/nddcoder/laravel-object-mapper/actions?query=workflow%3Arun-tests+branch%3Amaster)
-[![Total Downloads](https://img.shields.io/packagist/dt/nddcoder/laravel-object-mapper.svg?style=flat-square)](https://packagist.org/packages/nddcoder/laravel-object-mapper)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/nddcoder/object-mapper.svg?style=flat-square)](https://packagist.org/packages/nddcoder/object-mapper)
+[![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/dangdungcntt/object-mapper/run-tests?label=tests)](https://github.com/nddcoder/object-mapper/actions?query=workflow%3Arun-tests+branch%3Amaster)
+[![Total Downloads](https://img.shields.io/packagist/dt/nddcoder/object-mapper.svg?style=flat-square)](https://packagist.org/packages/nddcoder/object-mapper)
 
 An `ObjectMapper` for PHP (inspired by ObjectMapper in java)
 
@@ -11,7 +11,7 @@ An `ObjectMapper` for PHP (inspired by ObjectMapper in java)
 You can install the package via composer:
 
 ```bash
-composer require nddcoder/laravel-object-mapper
+composer require nddcoder/object-mapper
 ```
 
 ## Usage

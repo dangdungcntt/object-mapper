@@ -19,8 +19,8 @@ class ObjectMapperWriteValueTest extends TestCase
     {
         $data = $this->getData();
         /** @var User $user */
-        $user       = ObjectMapperFacade::readValue(json_encode($data), User::class);
-        $jsonString = ObjectMapperFacade::writeValueAsString($user);
+        $user       = $this->objectMapper->readValue(json_encode($data), User::class);
+        $jsonString = $this->objectMapper->writeValueAsString($user);
 
         unset($data['not_exists_field']);
         ksort($data);
@@ -38,7 +38,7 @@ class ObjectMapperWriteValueTest extends TestCase
         $user          = new ModelWithCustomGetter();
         $user->company = 'nddcoder';
 
-        $json = ObjectMapperFacade::writeValueAsString($user);
+        $json = $this->objectMapper->writeValueAsString($user);
 
         $this->assertEquals('{"company":"NDDCODER"}', $json);
     }
@@ -50,7 +50,7 @@ class ObjectMapperWriteValueTest extends TestCase
         $user->company = 'nddcoder';
         $user->setPassword('123abc');
 
-        $json = ObjectMapperFacade::writeValueAsString($user);
+        $json = $this->objectMapper->writeValueAsString($user);
 
         $this->assertEquals('{"company":"nddcoder"}', $json);
     }
@@ -59,13 +59,13 @@ class ObjectMapperWriteValueTest extends TestCase
     public function it_just_return_string_when_value_is_string()
     {
         $json = '123';
-        $this->assertEquals('123', ObjectMapperFacade::writeValueAsString($json));
+        $this->assertEquals('123', $this->objectMapper->writeValueAsString($json));
     }
 
     /** @test */
     public function it_return_empty_string_when_value_is_null()
     {
-        $this->assertEquals('', ObjectMapperFacade::writeValueAsString(null));
+        $this->assertEquals('', $this->objectMapper->writeValueAsString(null));
     }
 
     /** @test */
@@ -74,7 +74,7 @@ class ObjectMapperWriteValueTest extends TestCase
         $data = [
             'abc' => 123,
         ];
-        $this->assertEquals(json_encode($data), ObjectMapperFacade::writeValueAsString($data));
+        $this->assertEquals(json_encode($data), $this->objectMapper->writeValueAsString($data));
     }
 
     /** @test */
@@ -96,7 +96,7 @@ class ObjectMapperWriteValueTest extends TestCase
                     'name' => 'dungnd',
                 ]
             ),
-            ObjectMapperFacade::writeValueAsString($user)
+            $this->objectMapper->writeValueAsString($user)
         );
     }
 
@@ -121,7 +121,7 @@ class ObjectMapperWriteValueTest extends TestCase
                     'name' => 'dungnd',
                 ]
             ),
-            ObjectMapperFacade::writeValueAsString($user)
+            $this->objectMapper->writeValueAsString($user)
         );
     }
 
@@ -147,7 +147,7 @@ class ObjectMapperWriteValueTest extends TestCase
                     'name' => 'dungnd',
                 ]
             ),
-            ObjectMapperFacade::writeValueAsString($user)
+            $this->objectMapper->writeValueAsString($user)
         );
     }
 
@@ -163,14 +163,14 @@ class ObjectMapperWriteValueTest extends TestCase
                     'keys' => 'masked data',
                 ]
             ),
-            ObjectMapperFacade::writeValueAsString($user)
+            $this->objectMapper->writeValueAsString($user)
         );
     }
 
     /** @test */
     public function it_cast_non_object_to_string()
     {
-        $this->assertEquals('9', ObjectMapperFacade::writeValueAsString(9));
+        $this->assertEquals('9', $this->objectMapper->writeValueAsString(9));
     }
 
     /** @test */
@@ -189,7 +189,7 @@ class ObjectMapperWriteValueTest extends TestCase
                     ],
                 ]
             ),
-            ObjectMapperFacade::writeValueAsString($user)
+            $this->objectMapper->writeValueAsString($user)
         );
     }
 
@@ -208,7 +208,7 @@ class ObjectMapperWriteValueTest extends TestCase
                     'full_name'  => 'Dung Nguyen Dang',
                 ]
             ),
-            ObjectMapperFacade::writeValueAsString($model)
+            $this->objectMapper->writeValueAsString($model)
         );
     }
 }

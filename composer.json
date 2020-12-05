@@ -1,11 +1,11 @@
 {
-    "name": "nddcoder/laravel-object-mapper",
-    "description": "Object mapper for laravel",
+    "name": "nddcoder/object-mapper",
+    "description": "Object mapper for PHP",
     "keywords": [
         "nddcoder",
-        "laravel-object-mapper"
+        "object-mapper"
     ],
-    "homepage": "https://github.com/dangdungcntt/laravel-object-mapper",
+    "homepage": "https://github.com/dangdungcntt/object-mapper",
     "license": "MIT",
     "authors": [
         {
@@ -17,11 +17,9 @@
     ],
     "require": {
         "php": "^8.0",
-        "illuminate/support": "^8.0",
         "ext-json": "*"
     },
     "require-dev": {
-        "orchestra/testbench": "^6.0",
         "phpunit/phpunit": "^9.3",
         "vimeo/psalm": "^4.3"
     },
@@ -42,16 +40,6 @@
     },
     "config": {
         "sort-packages": true
-    },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Nddcoder\\ObjectMapper\\ObjectMapperServiceProvider"
-            ],
-            "aliases": {
-                "ObjectMapper": "Nddcoder\\ObjectMapper\\ObjectMapperFacade"
-            }
-        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true

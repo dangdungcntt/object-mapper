@@ -54,6 +54,7 @@ class ObjectMapper
      * @return mixed
      * @throws ClassNotFoundException
      * @throws AttributeMustNotBeNullException
+     * @throws ReflectionException
      */
     public function readValue(string|array $json, string $className): mixed
     {
@@ -70,9 +71,19 @@ class ObjectMapper
 
         $nulledProperties = [];
 
+        $calledSetter = [];
+
         foreach ($publicProperties as $classProperty) {
             /** @var ClassProperty $classProperty */
             $value = $data[$classProperty->jsonProperty?->name ?? StrHelpers::snake($classProperty->name)] ?? null;
+
+            if (array_key_exists($camelCaseMethod = 'set'.ucfirst($classProperty->name), $getterAndSetter)) {
+                /** @var ClassMethod $classMethod */
+                $classMethod = $getterAndSetter[$camelCaseMethod];
+                $instance->{$camelCaseMethod}($this->resolveValue($value, $classMethod->params[0] ?? null));
+                $calledSetter[$camelCaseMethod] = true;
+                continue;
+            }
 
             $resolvedValue = $this->resolveValue($value, $classProperty);
 
@@ -85,7 +96,13 @@ class ObjectMapper
         }
 
         foreach ($data as $snakeCaseProperty => $value) {
-            if (array_key_exists($camelCaseMethod = 'set'.StrHelpers::studly($snakeCaseProperty), $getterAndSetter)) {
+            $camelCaseMethod = 'set'.StrHelpers::studly($snakeCaseProperty);
+
+            if (isset($calledSetter[$camelCaseMethod])) {
+                continue;
+            }
+
+            if (array_key_exists($camelCaseMethod, $getterAndSetter)) {
                 /** @var ClassMethod $classMethod */
                 $classMethod = $getterAndSetter[$camelCaseMethod];
 
@@ -93,12 +110,17 @@ class ObjectMapper
                 continue;
             }
 
-            if (array_key_exists($snakeCaseMethod = 'set'.ucfirst($snakeCaseProperty), $getterAndSetter)) {
+            $snakeCaseMethod = 'set'.ucfirst($snakeCaseProperty);
+
+            if (isset($calledSetter[$snakeCaseMethod])) {
+                continue;
+            }
+
+            if (array_key_exists($snakeCaseMethod, $getterAndSetter)) {
                 /** @var ClassMethod $classMethod */
                 $classMethod = $getterAndSetter[$snakeCaseMethod];
 
                 $instance->{$snakeCaseMethod}($this->resolveValue($value, $classMethod->params[0] ?? null));
-                continue;
             }
         }
 
