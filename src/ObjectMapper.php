@@ -25,7 +25,7 @@ use Throwable;
 
 class ObjectMapper
 {
-    public static int $jsonEncodeFlags = 0;
+    protected int $jsonEncodeFlags = 0;
     protected static array $classInfoCache = [];
     protected static array $globalEncoderCache = [];
     protected static array $globalEncoders = [
@@ -66,6 +66,11 @@ class ObjectMapper
         unset($this->encoders[$targetClass]);
         //clear encoder cache
         $this->encoderCache = [];
+    }
+
+    public function setJsonEncodeFlags(int $flags)
+    {
+        $this->jsonEncodeFlags = $flags;
     }
 
     /**
@@ -164,7 +169,7 @@ class ObjectMapper
             foreach ($value as $key => $item) {
                 $result[$key] = $this->convertOutputValue($item);
             }
-            return json_encode($result, static::$jsonEncodeFlags);
+            return json_encode($result, $this->jsonEncodeFlags);
         }
 
         if (!is_object($value)) {
@@ -184,11 +189,11 @@ class ObjectMapper
             foreach ($value as $key => $item) {
                 $result[$key] = $this->convertOutputValue($item);
             }
-            return json_encode($result, static::$jsonEncodeFlags);
+            return json_encode($result, $this->jsonEncodeFlags);
         }
 
         if ($value instanceof JsonSerializable) {
-            return json_encode($value->jsonSerialize(), static::$jsonEncodeFlags);
+            return json_encode($value->jsonSerialize(), $this->jsonEncodeFlags);
         }
 
         if (method_exists($value, 'toJson')) {
@@ -196,7 +201,7 @@ class ObjectMapper
         }
 
         if (method_exists($value, 'toArray')) {
-            return json_encode($value->toArray(), static::$jsonEncodeFlags);
+            return json_encode($value->toArray(), $this->jsonEncodeFlags);
         }
 
         if (method_exists($value, '__toString')) {
@@ -243,7 +248,7 @@ class ObjectMapper
             $jsonObject[$classMethod->appendJsonOutput->field] = $this->convertOutputValue($value->{$methodName}());
         }
 
-        return json_encode((object)$jsonObject, static::$jsonEncodeFlags);
+        return json_encode((object)$jsonObject, $this->jsonEncodeFlags);
     }
 
     /**
