@@ -25,6 +25,7 @@ use Throwable;
 
 class ObjectMapper
 {
+    public static int $jsonEncodeFlags = 0;
     protected static array $classInfoCache = [];
     protected static array $encoderCache = [];
     protected static array $encoders = [
@@ -137,10 +138,6 @@ class ObjectMapper
 
     public function writeValueAsString(mixed $value): string
     {
-        if (is_string($value)) {
-            return $value;
-        }
-
         if (is_null($value)) {
             return '';
         }
@@ -150,10 +147,17 @@ class ObjectMapper
             foreach ($value as $key => $item) {
                 $result[$key] = $this->convertOutputValue($item);
             }
-            return json_encode((object)$result);
+            return json_encode($result, static::$jsonEncodeFlags);
         }
 
         if (!is_object($value)) {
+            $type = gettype($value);
+            $encoder = $this->findEncoder($type);
+
+            if (!is_null($encoder)) {
+                return $encoder->encode($value, $type);
+            }
+
             return (string)$value;
         }
 
@@ -170,11 +174,11 @@ class ObjectMapper
             foreach ($value as $key => $item) {
                 $result[$key] = $this->convertOutputValue($item);
             }
-            return json_encode((object)$result);
+            return json_encode($result, static::$jsonEncodeFlags);
         }
 
         if ($value instanceof JsonSerializable) {
-            return json_encode($value->jsonSerialize());
+            return json_encode($value->jsonSerialize(), static::$jsonEncodeFlags);
         }
 
         if (method_exists($value, 'toJson')) {
@@ -182,7 +186,7 @@ class ObjectMapper
         }
 
         if (method_exists($value, 'toArray')) {
-            return json_encode($value->toArray());
+            return json_encode($value->toArray(), static::$jsonEncodeFlags);
         }
 
         if (method_exists($value, '__toString')) {
@@ -229,7 +233,7 @@ class ObjectMapper
             $jsonObject[$classMethod->appendJsonOutput->field] = $this->convertOutputValue($value->{$methodName}());
         }
 
-        return json_encode((object)$jsonObject);
+        return json_encode((object)$jsonObject, static::$jsonEncodeFlags);
     }
 
     /**
