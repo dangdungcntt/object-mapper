@@ -2,7 +2,9 @@
 
 namespace Nddcoder\ObjectMapper;
 
+use ArrayObject;
 use DateTimeInterface;
+use JsonSerializable;
 use Nddcoder\ObjectMapper\Contracts\ObjectMapperEncoder;
 use Nddcoder\ObjectMapper\Encoders\DateTimeInterfaceEncoder;
 use Nddcoder\ObjectMapper\Encoders\StdClassEncoder;
@@ -144,23 +146,15 @@ class ObjectMapper
         }
 
         if (is_array($value)) {
-            return json_encode($value);
+            $result = [];
+            foreach ($value as $key => $item) {
+                $result[$key] = $this->convertOutputValue($item);
+            }
+            return json_encode((object)$result);
         }
 
         if (!is_object($value)) {
             return (string)$value;
-        }
-
-        if (method_exists($value, 'toArray')) {
-            return json_encode($value->toArray());
-        }
-
-        if (method_exists($value, 'toJson')) {
-            return $value->toJson();
-        }
-
-        if (method_exists($value, '__toString')) {
-            return $value->__toString();
         }
 
         $className = $value::class;
@@ -169,6 +163,30 @@ class ObjectMapper
 
         if (!is_null($encoder)) {
             return $encoder->encode($value, $className);
+        }
+
+        if ($value instanceof ArrayObject) {
+            $result = [];
+            foreach ($value as $key => $item) {
+                $result[$key] = $this->convertOutputValue($item);
+            }
+            return json_encode((object)$result);
+        }
+
+        if ($value instanceof JsonSerializable) {
+            return json_encode($value->jsonSerialize());
+        }
+
+        if (method_exists($value, 'toJson')) {
+            return $value->toJson();
+        }
+
+        if (method_exists($value, 'toArray')) {
+            return json_encode($value->toArray());
+        }
+
+        if (method_exists($value, '__toString')) {
+            return $value->__toString();
         }
 
         $getterAndSetter = $this->getClassInfo($className, self::CLASS_GETTER_AND_SETTER);

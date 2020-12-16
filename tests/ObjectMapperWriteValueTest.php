@@ -3,6 +3,8 @@
 namespace Nddcoder\ObjectMapper\Tests;
 
 use Nddcoder\ObjectMapper\ObjectMapperFacade;
+use Nddcoder\ObjectMapper\Tests\Model\ModelImplementArrayObject;
+use Nddcoder\ObjectMapper\Tests\Model\ModelImplementJsonSerializable;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithAppendJsonOutput;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithCustomGetter;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithKeysWithToString;
@@ -206,6 +208,46 @@ class ObjectMapperWriteValueTest extends TestCase
                     'first_name' => 'Dung',
                     'last_name'  => 'Nguyen Dang',
                     'full_name'  => 'Dung Nguyen Dang',
+                ]
+            ),
+            $this->objectMapper->writeValueAsString($model)
+        );
+    }
+
+    /** @test */
+    public function it_should_support_array_access_object()
+    {
+        $model = new \ArrayObject(
+            [
+                'name'  => 'Dung',
+                'email' => 'dangdungcntt@gmail.com'
+            ]
+        );
+        $this->assertEquals(
+            json_encode(
+                [
+                    'name'  => 'Dung',
+                    'email' => 'dangdungcntt@gmail.com'
+                ]
+            ),
+            $this->objectMapper->writeValueAsString($model)
+        );
+    }
+
+    /** @test */
+    public function it_should_support_json_serializable_object()
+    {
+        $model = new ModelImplementJsonSerializable(
+            [
+                'name'  => 'Dung',
+                'email' => 'dangdungcntt@gmail.com'
+            ]
+        );
+        $this->assertEquals(
+            json_encode(
+                [
+                    'name'  => 'Dung',
+                    'email' => 'dangdungcntt@gmail.com'
                 ]
             ),
             $this->objectMapper->writeValueAsString($model)
