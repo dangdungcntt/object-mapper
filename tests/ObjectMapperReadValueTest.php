@@ -259,7 +259,7 @@ class ObjectMapperReadValueTest extends TestCase
             }
         };
 
-        $this->objectMapper->addEncoder(Keys::class, $encoderInstance::class);
+        $this->objectMapper->addGlobalEncoder(Keys::class, $encoderInstance::class);
 
         /** @var Subscription $subscription */
         $subscription = $this->objectMapper->readValue(
@@ -275,9 +275,44 @@ class ObjectMapperReadValueTest extends TestCase
             Subscription::class
         );
 
-        $this->objectMapper->removeEncoder(Keys::class);
+        $this->objectMapper->removeGlobalEncoder(Keys::class);
 
         $this->assertInstanceOf(Subscription::class, $subscription);
         $this->assertEquals('67890secret', $subscription->keys->auth);
+    }
+
+    /** @test */
+    public function it_should_support_set_encoder_for_built_in_type_when_read_value()
+    {
+        $encoder = new class implements ObjectMapperEncoder {
+
+            public function encode(mixed $value, ?string $className = null): string
+            {
+                return strtoupper($value);
+            }
+
+            public function decode(mixed $value, ?string $className = null): mixed
+            {
+                return strtolower($value);
+            }
+        };
+
+        $this->objectMapper->addEncoder('string', $encoder::class);
+
+        /** @var Message $message */
+        $message = $this->objectMapper->readValue(
+            json_encode(
+                [
+                    'username' => 'NDDCODER',
+                    'content'  => 'CONTENT',
+                ]
+            ),
+            Message::class
+        );
+
+        $this->assertEquals('nddcoder', $message->username);
+        $this->assertEquals('content', $message->content);
+
+        $this->objectMapper->removeEncoder('string');
     }
 }

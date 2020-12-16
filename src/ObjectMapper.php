@@ -27,28 +27,45 @@ class ObjectMapper
 {
     public static int $jsonEncodeFlags = 0;
     protected static array $classInfoCache = [];
-    protected static array $encoderCache = [];
-    protected static array $encoders = [
+    protected static array $globalEncoderCache = [];
+    protected static array $globalEncoders = [
         DateTimeInterface::class => DateTimeInterfaceEncoder::class,
         stdClass::class          => StdClassEncoder::class
     ];
+
+    protected array $encoderCache = [];
+    protected array $encoders = [];
 
     protected const CLASS_PUBLIC_PROPERTIES = 'public_properties';
     protected const CLASS_PRIVATE_AND_PROTECTED_PROPERTIES = 'private_and_protected_properties';
     protected const CLASS_GETTER_AND_SETTER = 'getter_and_setter';
 
-    public static function addEncoder(string $targetClass, string $encoderClass): void
+    public static function addGlobalEncoder(string $targetClass, string $encoderClass): void
     {
-        static::$encoders[$targetClass] = $encoderClass;
+        static::$globalEncoders[$targetClass] = $encoderClass;
         //clear encoder cache
-        static::$encoderCache = [];
+        static::$globalEncoderCache = [];
     }
 
-    public static function removeEncoder(string $targetClass): void
+    public static function removeGlobalEncoder(string $targetClass): void
     {
-        unset(static::$encoders[$targetClass]);
+        unset(static::$globalEncoders[$targetClass]);
         //clear encoder cache
-        static::$encoderCache = [];
+        static::$globalEncoderCache = [];
+    }
+
+    public function addEncoder(string $targetClass, string $encoderClass): void
+    {
+        $this->encoders[$targetClass] = $encoderClass;
+        //clear encoder cache
+        $this->encoderCache = [];
+    }
+
+    public function removeEncoder(string $targetClass): void
+    {
+        unset($this->encoders[$targetClass]);
+        //clear encoder cache
+        $this->encoderCache = [];
     }
 
     /**
@@ -151,14 +168,7 @@ class ObjectMapper
         }
 
         if (!is_object($value)) {
-            $type = gettype($value);
-            $encoder = $this->findEncoder($type);
-
-            if (!is_null($encoder)) {
-                return $encoder->encode($value, $type);
-            }
-
-            return (string)$value;
+            return (string)$this->convertNonObjectValue($value);
         }
 
         $className = $value::class;
@@ -322,6 +332,12 @@ class ObjectMapper
         if ($classProperty->type->isBuiltin()) {
             try {
                 if (!$classProperty->arrayProperty || $classProperty->type->getName() != 'array') {
+                    $encoder = $this->findEncoder($classProperty->type->getName());
+
+                    if (!is_null($encoder)) {
+                        $value = $encoder->decode($value, $classProperty->type->getName());
+                    }
+
                     settype($value, $classProperty->type->getName());
                     return $value;
                 }
@@ -396,23 +412,33 @@ class ObjectMapper
 
     protected function findEncoder(string $className): ?ObjectMapperEncoder
     {
-        if (isset(static::$encoderCache[$className])) {
-            return static::$encoderCache[$className];
+        if (isset($this->encoderCache[$className])) {
+            return $this->encoderCache[$className];
         }
 
-        foreach (static::$encoders as $targetClass => $encoderClass) {
+        if (isset(static::$globalEncoderCache[$className])) {
+            return static::$globalEncoderCache[$className];
+        }
+
+        foreach ($this->encoders as $targetClass => $encoderClass) {
             if ($className == $targetClass || is_subclass_of($className, $targetClass)) {
-                return static::$encoderCache[$className] = new $encoderClass();
+                return $this->encoderCache[$className] = new $encoderClass();
             }
         }
 
-        return static::$encoderCache[$className] = null;
+        foreach (static::$globalEncoders as $targetClass => $encoderClass) {
+            if ($className == $targetClass || is_subclass_of($className, $targetClass)) {
+                return static::$globalEncoderCache[$className] = new $encoderClass();
+            }
+        }
+
+        return static::$globalEncoderCache[$className] = null;
     }
 
     protected function convertOutputValue(mixed $outputValue): mixed
     {
         if (!is_object($outputValue)) {
-            return $outputValue;
+            return $this->convertNonObjectValue($outputValue);
         }
 
         $stringOutput = $this->writeValueAsString($outputValue);
@@ -433,5 +459,16 @@ class ObjectMapper
                 'object' => 1,
             ]
         );
+    }
+
+    protected function convertNonObjectValue(mixed $value)
+    {
+        $type    = gettype($value);
+        $encoder = $this->findEncoder($type);
+
+        if (is_null($encoder)) {
+            return $value;
+        }
+        return $encoder->encode($value, $type);
     }
 }

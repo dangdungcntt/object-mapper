@@ -2,8 +2,9 @@
 
 namespace Nddcoder\ObjectMapper\Tests;
 
-use Nddcoder\ObjectMapper\ObjectMapperFacade;
-use Nddcoder\ObjectMapper\Tests\Model\ModelImplementArrayObject;
+use Nddcoder\ObjectMapper\Contracts\ObjectMapperEncoder;
+use Nddcoder\ObjectMapper\ObjectMapper;
+use Nddcoder\ObjectMapper\Tests\Model\Message;
 use Nddcoder\ObjectMapper\Tests\Model\ModelImplementJsonSerializable;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithAppendJsonOutput;
 use Nddcoder\ObjectMapper\Tests\Model\ModelWithCustomGetter;
@@ -252,5 +253,85 @@ class ObjectMapperWriteValueTest extends TestCase
             ),
             $this->objectMapper->writeValueAsString($model)
         );
+    }
+
+    /** @test */
+    public function it_should_support_set_encoder_for_built_in_type()
+    {
+        $encoder = new class implements ObjectMapperEncoder {
+
+            public function encode(mixed $value, ?string $className = null): string
+            {
+                return strtoupper($value);
+            }
+
+            public function decode(mixed $value, ?string $className = null): mixed
+            {
+                return $value;
+            }
+        };
+
+        $this->objectMapper::addGlobalEncoder('string', $encoder::class);
+
+        $model           = new Message();
+        $model->content  = 'content';
+        $model->username = 'nddcoder';
+
+        $this->assertEquals(
+            json_encode(
+                [
+                    'username' => 'NDDCODER',
+                    'content'  => 'CONTENT',
+                ]
+            ),
+            $this->objectMapper->writeValueAsString($model)
+        );
+
+        $this->objectMapper::removeGlobalEncoder('string');
+    }
+
+    /** @test */
+    public function it_should_support_set_encoder_per_instance()
+    {
+        $encoder1 = new class implements ObjectMapperEncoder {
+
+            public function encode(mixed $value, ?string $className = null): string
+            {
+                return strtoupper($value);
+            }
+
+            public function decode(mixed $value, ?string $className = null): mixed
+            {
+                return $value;
+            }
+        };
+
+        $encoder2 = new class implements ObjectMapperEncoder {
+
+            public function encode(mixed $value, ?string $className = null): string
+            {
+                return strtolower($value);
+            }
+
+            public function decode(mixed $value, ?string $className = null): mixed
+            {
+                return $value;
+            }
+        };
+
+        $this->objectMapper->addEncoder('string', $encoder1::class);
+        $objectMapper2 = new ObjectMapper();
+        $objectMapper2->addEncoder('string', $encoder2::class);
+
+        $this->assertEquals(
+            json_encode(
+                [
+                    'name' => 'nddcoder'
+                ]
+            ),
+            $objectMapper2->writeValueAsString(['name' => 'nddCODER'])
+        );
+
+        $this->objectMapper->removeEncoder('string');
     }
 }
