@@ -421,14 +421,14 @@ class ObjectMapper
             return $this->encoderCache[$className];
         }
 
-        if (isset(static::$globalEncoderCache[$className])) {
-            return static::$globalEncoderCache[$className];
-        }
-
         foreach ($this->encoders as $targetClass => $encoderClass) {
             if ($className == $targetClass || is_subclass_of($className, $targetClass)) {
                 return $this->encoderCache[$className] = new $encoderClass();
             }
+        }
+
+        if (isset(static::$globalEncoderCache[$className])) {
+            return static::$globalEncoderCache[$className];
         }
 
         foreach (static::$globalEncoders as $targetClass => $encoderClass) {

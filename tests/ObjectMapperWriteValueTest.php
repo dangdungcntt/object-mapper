@@ -334,4 +334,73 @@ class ObjectMapperWriteValueTest extends TestCase
 
         $this->objectMapper->removeEncoder('string');
     }
+
+    /** @test */
+    public function it_should_support_set_encoder_override_global_encoder()
+    {
+        $globalStringEncoder = new class implements ObjectMapperEncoder {
+
+            public function encode(mixed $value, ?string $className = null): string
+            {
+                return strtoupper($value);
+            }
+
+            public function decode(mixed $value, ?string $className = null): mixed
+            {
+                return $value;
+            }
+        };
+
+        $customStringEncoder = new class implements ObjectMapperEncoder {
+
+            public function encode(mixed $value, ?string $className = null): string
+            {
+                return strtolower($value);
+            }
+
+            public function decode(mixed $value, ?string $className = null): mixed
+            {
+                return $value;
+            }
+        };
+
+        $this->objectMapper::addGlobalEncoder('string', $globalStringEncoder::class);
+        $objectMapper2 = new ObjectMapper();
+        $objectMapper2->addEncoder('string', $customStringEncoder::class);
+
+        $this->assertEquals(
+            json_encode(
+                [
+                    'name' => 'NDDCODER'
+                ]
+            ),
+            $this->objectMapper->writeValueAsString(['name' => 'nddCODER'])
+        );
+
+        $this->assertEquals(
+            json_encode(
+                [
+                    'name' => 'nddcoder'
+                ]
+            ),
+            $objectMapper2->writeValueAsString(['name' => 'nddCODER'])
+        );
+
+        $this->objectMapper::removeGlobalEncoder('string');
+    }
+
+    /** @test */
+    public function it_should_set_json_encoder_flag()
+    {
+        $this->objectMapper->setJsonEncodeFlags(JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $this->assertEquals(
+            json_encode(
+                [
+                    'name' => 'nddcoder'
+                ],
+                JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT
+            ),
+            $this->objectMapper->writeValueAsString(['name' => 'nddcoder'])
+        );
+    }
 }
