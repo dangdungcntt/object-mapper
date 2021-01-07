@@ -175,16 +175,18 @@ class ObjectIdEncoder implements ObjectMapperEncoder
 }
 ```
 
-and then add it using `ObjectMapper::addEncoder` function
+and then using `ObjectMapper::addGlobalEncoder` to add it as global or `addEncoder` to add it to current instance only
 
 ```php
-ObjectMapper::addEncoder(ObjectId::class, ObjectIdEncoder::class);
+ObjectMapper::addGlobalEncoder(ObjectId::class, ObjectIdEncoder::class);
+$objectMapper->addEncoder(ObjectId::class, ObjectIdEncoder::class);
 ```
 
-You can remove an encoder of a class using `ObjectMapper::removeEncoder` function 
+You can remove global encoder using `ObjectMapper::removeGlobalEncoder` or `removeEncoder` to remove encoder from current instance only 
 
 ```php
-ObjectMapper::removeEncoder(ObjectId::class);
+ObjectMapper::removeGlobalEncoder(ObjectId::class);
+$objectMapper->removeEncoder(ObjectId::class);
 ```
 
 ## Testing
