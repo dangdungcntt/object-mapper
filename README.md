@@ -144,7 +144,7 @@ $objectMapper = new ObjectMapper();
 $jsonString = '{"username":"nddcoder","password":"secret"}';
 $user = $objectMapper->readValue($jsonString, User::class);
 echo $user->username; //nddcoder
-echo $user->content; //5ebe2294ecd0e0f08eab7690d2a6ee69
+echo $user->password; //5ebe2294ecd0e0f08eab7690d2a6ee69
 
 //Convert object to json string
 $userJsonString = $objectMapper->writeValueAsString($user);
