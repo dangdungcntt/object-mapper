@@ -6,8 +6,8 @@ use Exception;
 
 class ClassNotFoundException extends Exception
 {
-    public static function make(string $className): self
+    public static function make(string $className): static
     {
-        return new self(sprintf("Class %s not found", $className));
+        return new static(sprintf("Class %s not found", $className));
     }
 }

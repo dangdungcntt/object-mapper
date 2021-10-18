@@ -36,7 +36,7 @@
     "scripts": {
         "psalm": "psalm",
         "test": "phpunit --colors=always",
-        "test-coverage": "phpunit --coverage-html coverage"
+        "test-coverage": "XDEBUG_MODE=coverage phpunit --coverage-html coverage"
     },
     "config": {
         "sort-packages": true

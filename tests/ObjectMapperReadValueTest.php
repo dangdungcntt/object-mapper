@@ -315,4 +315,21 @@ class ObjectMapperReadValueTest extends TestCase
 
         $this->objectMapper->removeEncoder('string');
     }
+
+    /** @test */
+    public function it_should_throw_exception_when_resolve_invalid_value_for_non_null_named_type()
+    {
+
+        $this->expectException(AttributeMustNotBeNullException::class);
+
+        $this->objectMapper->readValue(
+            json_encode(
+                [
+                    'endpoint' => 'NDDCODER',
+                    'keys'  => 'CONTENT', //Invalid type Keys
+                ]
+            ),
+            Subscription::class
+        );
+    }
 }

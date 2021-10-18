@@ -6,8 +6,8 @@ use Exception;
 
 class AttributeMustNotBeNullException extends Exception
 {
-    public static function make(string $className, string $propertyName): self
+    public static function make(string $className, string $propertyName): static
     {
-        return new self(sprintf("%s::\$%s must not be null", $className, $propertyName));
+        return new static(sprintf("%s::\$%s must not be null", $className, $propertyName));
     }
 }

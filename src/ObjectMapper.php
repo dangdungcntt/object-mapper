@@ -94,7 +94,7 @@ class ObjectMapper
         $publicProperties = $this->getClassInfo($className, self::CLASS_PUBLIC_PROPERTIES);
         $getterAndSetter  = $this->getClassInfo($className, self::CLASS_GETTER_AND_SETTER);
 
-        $nulledProperties = [];
+        $missingProperties = [];
 
         $calledSetter = [];
 
@@ -113,7 +113,7 @@ class ObjectMapper
             $resolvedValue = $this->resolveValue($value, $classProperty);
 
             if (is_null($resolvedValue) && !is_null($classProperty->type) && !$classProperty->type->allowsNull()) {
-                $nulledProperties[] = $classProperty->name;
+                $missingProperties[] = $classProperty->name;
                 continue;
             }
 
@@ -149,7 +149,7 @@ class ObjectMapper
             }
         }
 
-        foreach ($nulledProperties as $propertyName) {
+        foreach ($missingProperties as $propertyName) {
             if (!isset($instance->{$propertyName})) {
                 throw AttributeMustNotBeNullException::make($className, $propertyName);
             }
@@ -315,10 +315,6 @@ class ObjectMapper
             return null;
         }
 
-        if (is_null($classProperty->type)) {
-            return $value;
-        }
-
         if ($classProperty->type instanceof ReflectionNamedType) {
             return $this->resolveNamedType($value, $classProperty);
         }
@@ -326,10 +322,8 @@ class ObjectMapper
         if ($classProperty->type instanceof ReflectionUnionType) {
             return $this->resolveUnionType($value, $classProperty);
         }
-        // @codeCoverageIgnoreStart
-        // Never reached here because ReflectionType has only 2 implementations: ReflectionUnionType, ReflectionNamedType
-        return null;
-        // @codeCoverageIgnoreEnd
+
+        return $value;
     }
 
     protected function resolveNamedType(mixed $value, ?ClassProperty $classProperty): mixed
@@ -376,7 +370,7 @@ class ObjectMapper
 
         $encoder = $this->findEncoder($propertyClassName);
 
-        $resolvedValue = null;
+        $resolvedValue = $value;
         if (!is_null($encoder)) {
             $resolvedValue = $encoder->decode($value, $propertyClassName);
         } elseif (is_array($value)) {
@@ -466,7 +460,7 @@ class ObjectMapper
         );
     }
 
-    protected function convertNonObjectValue(mixed $value)
+    protected function convertNonObjectValue(mixed $value): mixed
     {
         $type    = gettype($value);
         $encoder = $this->findEncoder($type);
